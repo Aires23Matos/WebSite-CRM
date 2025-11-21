@@ -1,4 +1,3 @@
-// pages/RegisterClient.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -87,15 +86,16 @@ const RegisterClient = () => {
       newErrors.clientName = 'Nome deve ter pelo menos 2 caracteres';
       isValid = false;
     }
-
+    
     if (!formData.nif) {
       newErrors.nif = 'NIF é obrigatório';
       isValid = false;
-    } else if (formData.nif.length < 9) {
-      newErrors.nif = 'NIF deve ter pelo menos 9 dígitos';
+    } else if (formData.nif.length > 14 ) {
+      newErrors.nif = 'NIF deve ter pelo menos 10 a 14 dígitos';
       isValid = false;
-    } else if (!/^\d+$/.test(formData.nif)) {
-      newErrors.nif = 'NIF deve conter apenas números';
+    }
+     else if (!/^\d|[A-Za-z0-9]+$/.test(formData.nif)) {
+      newErrors.nif = 'NIF deve conter apenas números e letras';
       isValid = false;
     }
 
@@ -182,15 +182,15 @@ const RegisterClient = () => {
     navigate(`/client/update/${client.client_id}`);
   };
 
-  const handleDelete = (client) => {
-    setDeleteDialog({ open: true, client });
-  };
+  // const handleDelete = (client) => {
+  //   setDeleteDialog({ open: true, client });
+  // };
 
   const confirmDelete = async () => {
     if (!deleteDialog.client) return;
 
     try {
-      const clientId = deleteDialog.client._id || deleteDialog.client.client_id;
+      const clientId =  deleteDialog.client.client_id;
       await axios.delete(`http://localhost:3000/api/v1/client/delete/${clientId}`);
       setSuccess('Cliente excluído com sucesso!');
       fetchClients(); // Recarregar lista
@@ -304,12 +304,12 @@ const RegisterClient = () => {
                       value={formData.nif}
                       onChange={handleChange}
                       error={!!errors.nif}
-                      helperText={errors.nif || "Número de Identificação Fiscal (9 dígitos)"}
+                      helperText={errors.nif || "Número de Identificação Fiscal (14 dígitos)"}
                       disabled={saving}
-                      placeholder="123456789"
+                      placeholder="12345678910"
                       variant="outlined"
                       inputProps={{
-                        maxLength: 9,
+                        maxLength: 14,
                         inputMode: 'numeric'
                       }}
                       InputProps={{
@@ -360,7 +360,7 @@ const RegisterClient = () => {
                 <strong>Nome do Cliente:</strong> Use o nome completo ou razão social
               </Typography>
               <Typography component="li" variant="body2">
-                <strong>NIF:</strong> Deve conter exatamente 9 dígitos numéricos
+                <strong>NIF:</strong> Deve conter exatamente 10 a 14 dígitos numéricos
               </Typography>
               <Typography component="li" variant="body2">
                 <strong>Campos obrigatórios:</strong> Todos os campos marcados com (*) são de preenchimento obrigatório
@@ -436,13 +436,7 @@ const RegisterClient = () => {
                               >
                                 <EditIcon />
                               </IconButton>
-                              <IconButton
-                                color="error"
-                                onClick={() => handleDelete(client)}
-                                size="small"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
+                           
                             </TableCell>
                           </TableRow>
                         ))

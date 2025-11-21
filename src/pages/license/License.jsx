@@ -87,7 +87,8 @@ const License = () => {
     hora_de_formacao: '',
     validade_em_mes: 12,
     conta_pago: 'Pago',
-    valor_pago: 0
+    valor_pago: 0,
+    valor_total: 0 
   });
 
   // Carregar lista de licenças
@@ -100,7 +101,17 @@ const License = () => {
     
     try {
       const response = await axios.get('http://localhost:3000/api/v1/licenses/licenses');
-      setLicenses(response.data.data?.licenses || response.data.data || []);
+      const licensesData = response.data.data?.licenses || response.data.data || [];
+      
+      // Verificar e atualizar estado das licenças expiradas
+      const updatedLicenses = licensesData.map(license => {
+        if (isLicenseExpired(license.data_da_expiracao) && license.estado === 'ativa') {
+          return { ...license, estado: 'expirada' };
+        }
+        return license;
+      });
+      
+      setLicenses(updatedLicenses);
       setError('');
     } catch (err) {
       console.error('Erro ao carregar licenças:', err);
@@ -109,6 +120,12 @@ const License = () => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  // Função para verificar se a licença está expirada
+  const isLicenseExpired = (expirationDate) => {
+    if (!expirationDate) return false;
+    return new Date(expirationDate) < new Date();
   };
 
   useEffect(() => {
@@ -124,13 +141,11 @@ const License = () => {
 
     setLoadingAddresses(true);
     try {
-      // Buscar endereços pela rota de endereços filtrando por client_id
       const response = await axios.get(`http://localhost:3000/api/v1/address/${clientId}`);
       const addresses = response.data.data?.addresses || [];
       setClientAddresses(addresses);
     } catch (err) {
       console.error('Erro ao carregar endereços do cliente:', err);
-      // Se der erro, tentar buscar de forma alternativa
       try {
         const alternativeResponse = await axios.get('http://localhost:3000/api/v1/address/addresses');
         const allAddresses = alternativeResponse.data.data?.addresses || [];
@@ -147,10 +162,36 @@ const License = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Se a conta for "Parcial", garantir que valor_total seja maior que valor_pago
+    if (name === 'conta_pago' && value === 'Parcial') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        valor_total: prev.valor_total > prev.valor_pago ? prev.valor_total : prev.valor_pago + 1000
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'validade_em_mes' || name === 'valor_pago' ? Number(value) : value
+      [name]: name === 'validade_em_mes' || name === 'valor_pago' || name === 'valor_total' ? Number(value) : value
     }));
+  };
+
+  // Validação para garantir que valor_pago não seja maior que valor_total quando conta_pago for "Parcial"
+  const validatePaymentValues = () => {
+    if (formData.conta_pago === 'Parcial') {
+      if (formData.valor_pago > formData.valor_total) {
+        setError('O valor pago não pode ser maior que o valor total');
+        return false;
+      }
+      if (formData.valor_total <= 0) {
+        setError('O valor total deve ser maior que zero para pagamento parcial');
+        return false;
+      }
+    }
+    return true;
   };
 
   const handleClientChange = (client) => {
@@ -185,8 +226,20 @@ const License = () => {
     setError('');
     setSuccess('');
 
+    // Validar valores de pagamento
+    if (!validatePaymentValues()) {
+      setSaving(false);
+      return;
+    }
+
+    // Verificar se a licença está expirada e ajustar o estado automaticamente
+    const finalFormData = { ...formData };
+    if (isLicenseExpired(formData.data_da_expiracao) && formData.estado === 'ativa') {
+      finalFormData.estado = 'expirada';
+    }
+
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/licenses/register', formData);
+      const response = await axios.post('http://localhost:3000/api/v1/licenses/register', finalFormData);
       setSuccess(response.data.message || 'Licença criada com sucesso!');
       
       // Limpar formulário e recarregar lista
@@ -202,7 +255,8 @@ const License = () => {
         hora_de_formacao: '',
         validade_em_mes: 12,
         conta_pago: 'Pago',
-        valor_pago: 0
+        valor_pago: 0,
+        valor_total: 0
       });
       setSelectedClient(null);
       setClientAddresses([]);
@@ -252,7 +306,12 @@ const License = () => {
   };
 
   // Função para obter configuração do estado
-  const getEstadoConfig = (estado) => {
+  const getEstadoConfig = (estado, expirationDate) => {
+    // Se a licença está expirada, forçar estado como expirada
+    if (isLicenseExpired(expirationDate) && estado === 'ativa') {
+      estado = 'expirada';
+    }
+
     switch (estado) {
       case 'ativa':
         return { 
@@ -306,8 +365,8 @@ const License = () => {
   // Calcular estatísticas
   const stats = {
     total: licenses.length,
-    ativas: licenses.filter(l => l.estado === 'ativa').length,
-    expiradas: licenses.filter(l => l.estado === 'expirada').length,
+    ativas: licenses.filter(l => l.estado === 'ativa' && !isLicenseExpired(l.data_da_expiracao)).length,
+    expiradas: licenses.filter(l => l.estado === 'expirada' || (l.estado === 'ativa' && isLicenseExpired(l.data_da_expiracao))).length,
     pendentes: licenses.filter(l => l.estado === 'pendente').length,
     valorTotal: licenses.reduce((sum, l) => sum + (l.valor_pago || 0), 0)
   };
@@ -456,8 +515,8 @@ const License = () => {
                 </Fade>
               )}
 
-              <form onSubmit={handleSubmit} >
-                <Grid container spacing={2} >
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <ClientSelect
                       value={selectedClient}
@@ -494,9 +553,6 @@ const License = () => {
                                 <Typography variant="body1" fontWeight="medium">
                                   {endereco.municipio}
                                 </Typography>
-                                {/* <Typography variant="body2" color="text.secondary">
-                                  {endereco.bairro} - {endereco.rua_ou_avenida}
-                                </Typography> */}
                               </Box>
                             </MenuItem>
                           ))}
@@ -696,6 +752,31 @@ const License = () => {
                     />
                   </Grid>
 
+                  {/* Campo para Valor Total - aparece apenas quando conta_pago é "Parcial" */}
+                  {formData.conta_pago === 'Parcial' && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Valor Total (KZ)"
+                        name="valor_total"
+                        type="number"
+                        value={formData.valor_total}
+                        onChange={handleChange}
+                        variant="outlined"
+                        required
+                        helperText="Valor total a ser pago pela licença"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <TrendingUpIcon color="action" />
+                            </InputAdornment>
+                          ),
+                          inputProps: { min: formData.valor_pago, step: 0.01 }
+                        }}
+                      />
+                    </Grid>
+                  )}
+
                   <Grid item xs={12}>
                     <Box display="flex" gap={2} justifyContent="flex-end" sx={{ mt: 2 }}>
                       <Button
@@ -734,7 +815,7 @@ const License = () => {
           </Card>
         </Grid>
 
-        {/* Resto do código da tabela e estatísticas permanece igual */}
+        {/* Tabela de Licenças */}
         <Grid item xs={12} lg={6}>
           <Card
             sx={{ 
@@ -811,7 +892,7 @@ const License = () => {
                         <TableCell>Localização</TableCell>
                         <TableCell>Estado</TableCell>
                         {!isMobile && <TableCell>Expiração</TableCell>}
-                        <TableCell>Valor</TableCell>
+                        <TableCell>Pagamento</TableCell>
                         <TableCell align="center">Ações</TableCell>
                       </TableRow>
                     </TableHead>
@@ -832,109 +913,132 @@ const License = () => {
                         </TableRow>
                       ) : (
                         licenses.map((license) => {
-                          const estadoConfig = getEstadoConfig(license.estado);
+                          const estadoConfig = getEstadoConfig(license.estado, license.data_da_expiracao);
                           const pagamentoConfig = getPagamentoConfig(license.conta_pago);
+                          const isExpired = isLicenseExpired(license.data_da_expiracao);
+                          const displayEstado = isExpired && license.estado === 'ativa' ? 'expirada' : license.estado;
                           
                           return (
-                          <TableRow 
-                            key={license._id || license.license_id}
-                            sx={{ 
-                              transition: 'all 0.2s ease-in-out',
-                              '&:hover': { 
-                                backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                                transform: 'translateX(4px)'
-                              }
-                            }}
-                          >
-                            <TableCell>
-                              <Typography variant="body2" fontWeight="600">
-                                {license.numeroLicenca || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {license.cliente?.clientName || license.client_id || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {license.localizacao || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                icon={estadoConfig.icon}
-                                label={license.estado || 'N/A'}
-                                color={estadoConfig.color}
-                                size="small"
-                                variant="filled"
-                                sx={{ 
-                                  fontWeight: 500,
-                                  background: estadoConfig.gradient,
-                                  color: 'white',
-                                  '& .MuiChip-icon': {
-                                    color: 'white !important'
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                            {!isMobile && (
+                            <TableRow 
+                              key={license._id || license.license_id}
+                              sx={{ 
+                                transition: 'all 0.2s ease-in-out',
+                                '&:hover': { 
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                                  transform: 'translateX(4px)'
+                                }
+                              }}
+                            >
                               <TableCell>
-                                <Typography variant="body2" color="text.secondary">
-                                  {formatDate(license.data_da_expiracao)}
+                                <Typography variant="body2" fontWeight="600">
+                                  {license.numeroLicenca || 'N/A'}
                                 </Typography>
                               </TableCell>
-                            )}
-                            <TableCell>
-                              <Box display="flex" alignItems="center" gap={1}>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {license.cliente?.clientName || license.client_id || 'N/A'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" color="text.secondary">
+                                  {license.localizacao || 'N/A'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                                 <Chip
-                                  icon={pagamentoConfig.icon}
-                                  label={license.valor_pago ? `${license.valor_pago} KZ` : 'N/A'}
-                                  color={pagamentoConfig.color}
+                                  icon={estadoConfig.icon}
+                                  label={displayEstado}
+                                  color={estadoConfig.color}
                                   size="small"
-                                  variant="outlined"
-                                  sx={{ fontWeight: 500 }}
+                                  variant="filled"
+                                  sx={{ 
+                                    fontWeight: 500,
+                                    background: estadoConfig.gradient,
+                                    color: 'white',
+                                    '& .MuiChip-icon': {
+                                      color: 'white !important'
+                                    }
+                                  }}
                                 />
-                              </Box>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Box display="flex" justifyContent="center" gap={0.5}>
-                                <Tooltip title="Editar licença">
-                                  <IconButton
-                                    color="primary"
-                                    onClick={() => handleEdit(license)}
+                              </TableCell>
+                              {!isMobile && (
+                                <TableCell>
+                                  <Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                      {formatDate(license.data_da_expiracao)}
+                                    </Typography>
+                                    {isExpired && (
+                                      <Chip
+                                        label="Expirada"
+                                        color="error"
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ mt: 0.5, fontSize: '0.6rem', height: 20 }}
+                                      />
+                                    )}
+                                  </Box>
+                                </TableCell>
+                              )}
+                              <TableCell>
+                                <Box display="flex" flexDirection="column" gap={0.5}>
+                                  <Chip
+                                    icon={pagamentoConfig.icon}
+                                    label={license.valor_pago ? `${license.valor_pago} KZ` : 'N/A'}
+                                    color={pagamentoConfig.color}
                                     size="small"
-                                    sx={{ 
-                                      background: alpha(theme.palette.primary.main, 0.1),
-                                      '&:hover': { 
-                                        background: alpha(theme.palette.primary.main, 0.2),
-                                        transform: 'scale(1.1)'
-                                      }
-                                    }}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Excluir licença">
-                                  <IconButton
-                                    color="error"
-                                    onClick={() => handleDelete(license)}
-                                    size="small"
-                                    sx={{ 
-                                      background: alpha(theme.palette.error.main, 0.1),
-                                      '&:hover': { 
-                                        background: alpha(theme.palette.error.main, 0.2),
-                                        transform: 'scale(1.1)'
-                                      }
-                                    }}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        )})
+                                    variant="outlined"
+                                    sx={{ fontWeight: 500 }}
+                                  />
+                                  {license.conta_pago === 'Parcial' && license.valor_total && (
+                                    <Typography 
+                                      variant="caption" 
+                                      color="text.secondary"
+                                      sx={{ textAlign: 'center' }}
+                                    >
+                                      Total: {license.valor_total} KZ
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Box display="flex" justifyContent="center" gap={0.5}>
+                                  <Tooltip title="Editar licença">
+                                    <IconButton
+                                      color="primary"
+                                      onClick={() => handleEdit(license)}
+                                      size="small"
+                                      sx={{ 
+                                        background: alpha(theme.palette.primary.main, 0.1),
+                                        '&:hover': { 
+                                          background: alpha(theme.palette.primary.main, 0.2),
+                                          transform: 'scale(1.1)'
+                                        }
+                                      }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Excluir licença">
+                                    <IconButton
+                                      color="error"
+                                      onClick={() => handleDelete(license)}
+                                      size="small"
+                                      sx={{ 
+                                        background: alpha(theme.palette.error.main, 0.1),
+                                        '&:hover': { 
+                                          background: alpha(theme.palette.error.main, 0.2),
+                                          transform: 'scale(1.1)'
+                                        }
+                                      }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -1082,6 +1186,9 @@ const License = () => {
               </Typography>
               <Typography variant="body2">
                 <strong>Valor:</strong> {deleteDialog.license.valor_pago ? `${deleteDialog.license.valor_pago} KZ` : 'N/A'}
+                {deleteDialog.license.conta_pago === 'Parcial' && deleteDialog.license.valor_total && (
+                  <span> de {deleteDialog.license.valor_total} KZ</span>
+                )}
               </Typography>
             </Box>
           )}

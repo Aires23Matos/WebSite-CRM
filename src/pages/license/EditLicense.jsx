@@ -22,7 +22,8 @@ import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   CardMembership as LicenseIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  TrendingUp as TrendingUpIcon
 } from "@mui/icons-material";
 import CreateClient from "../clients/CreateClient";
 
@@ -40,6 +41,12 @@ const EditLicense = () => {
   const [clientAddresses, setClientAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [clientLoading, setClientLoading] = useState(false);
+
+  // Função para verificar se a licença está expirada
+  const isLicenseExpired = (expirationDate) => {
+    if (!expirationDate) return false;
+    return new Date(expirationDate) < new Date();
+  };
 
   // Função para normalizar datas para o backend (CORRIGIDA)
   const normalizeDateForBackend = (dateString) => {
@@ -120,6 +127,12 @@ const EditLicense = () => {
         
         const license = response.data.data;
 
+        // Verificar se a licença está expirada e ajustar o estado automaticamente
+        let estado = license.estado || "ativa";
+        if (isLicenseExpired(license.data_da_expiracao) && estado === "ativa") {
+          estado = "expirada";
+        }
+
         const licenseData = {
           client_id: license.client_id || "",
           tecnico: license.tecnico || "",
@@ -134,11 +147,12 @@ const EditLicense = () => {
           data_da_expiracao: license.data_da_expiracao
             ? license.data_da_expiracao.split("T")[0]
             : "",
-          estado: license.estado || "ativa",
+          estado: estado,
           hora_de_formacao: license.hora_de_formacao || "",
           validade_em_mes: license.validade_em_mes || 12,
           conta_pago: license.conta_pago || "Pendente",
           valor_pago: license.valor_pago || 0,
+          valor_total: license.valor_total || 0 // Novo campo para valor total
         };
 
         setFormData(licenseData);
@@ -183,13 +197,48 @@ const EditLicense = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Se a conta for "Parcial", garantir que valor_total seja maior que valor_pago
+    if (name === 'conta_pago' && value === 'Parcial') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        valor_total: prev.valor_total > prev.valor_pago ? prev.valor_total : prev.valor_pago + 1000
+      }));
+      return;
+    }
+
+    // Se o estado for alterado para "ativa" mas a licença está expirada, mudar para "expirada"
+    if (name === 'estado' && value === 'ativa' && isLicenseExpired(formData.data_da_expiracao)) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: 'expirada'
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "validade_em_mes" || name === "valor_pago"
+        name === "validade_em_mes" || name === "valor_pago" || name === "valor_total"
           ? Number(value)
           : value,
     }));
+  };
+
+  // Validação para garantir que valor_pago não seja maior que valor_total quando conta_pago for "Parcial"
+  const validatePaymentValues = () => {
+    if (formData.conta_pago === 'Parcial') {
+      if (formData.valor_pago > formData.valor_total) {
+        setError('O valor pago não pode ser maior que o valor total');
+        return false;
+      }
+      if (formData.valor_total <= 0) {
+        setError('O valor total deve ser maior que zero para pagamento parcial');
+        return false;
+      }
+    }
+    return true;
   };
 
   const handleClientChange = (client) => {
@@ -237,6 +286,12 @@ const EditLicense = () => {
     setError("");
     setSuccess("");
 
+    // Validar valores de pagamento
+    if (!validatePaymentValues()) {
+      setSaving(false);
+      return;
+    }
+
     try {
       // Pega apenas os campos que foram modificados
       const changedData = getChangedFields();
@@ -249,6 +304,12 @@ const EditLicense = () => {
       }
 
       console.log("Campos modificados para atualização:", changedData);
+
+      // Verificar se a licença está expirada e ajustar o estado automaticamente
+      if (isLicenseExpired(formData.data_da_expiracao) && formData.estado === 'ativa') {
+        changedData.estado = 'expirada';
+        setFormData(prev => ({ ...prev, estado: 'expirada' }));
+      }
 
       // Normalizar datas antes de enviar
       const dataToSend = { ...changedData };
@@ -353,6 +414,13 @@ const EditLicense = () => {
             </Alert>
           )}
 
+          {/* Alerta se a licença está expirada */}
+          {isLicenseExpired(formData.data_da_expiracao) && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              Esta licença está expirada. O estado foi automaticamente ajustado para "Expirada".
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
@@ -411,9 +479,6 @@ const EditLicense = () => {
                             <Typography variant="body1" fontWeight="medium">
                               {endereco.municipio}
                             </Typography>
-                            {/* <Typography variant="body2" color="text.secondary">
-                              {endereco.bairro} - {endereco.rua_ou_avenida}
-                            </Typography> */}
                           </Box>
                         </MenuItem>
                       ))}
@@ -560,12 +625,18 @@ const EditLicense = () => {
                   onChange={handleChange}
                   variant="outlined"
                   required
+                  disabled={isLicenseExpired(formData.data_da_expiracao) && formData.estado === "expirada"}
                 >
                   <MenuItem value="ativa">Ativa</MenuItem>
                   <MenuItem value="expirada">Expirada</MenuItem>
                   <MenuItem value="pendente">Pendente</MenuItem>
                   <MenuItem value="cancelada">Cancelada</MenuItem>
                 </TextField>
+                {isLicenseExpired(formData.data_da_expiracao) && formData.estado === "expirada" && (
+                  <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.5 }}>
+                    Estado bloqueado: licença expirada não pode estar ativa
+                  </Typography>
+                )}
                 {isFieldModified('estado') && (
                   <Typography variant="caption" color="primary">
                     ✓ Campo modificado
@@ -577,7 +648,7 @@ const EditLicense = () => {
                 <TextField
                   fullWidth
                   select
-                  label="Conta Pago"
+                  label="Status do Pagamento"
                   name="conta_pago"
                   value={formData.conta_pago || "Pendente"}
                   onChange={handleChange}
@@ -618,13 +689,20 @@ const EditLicense = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Valor Pago"
+                  label="Valor Pago (KZ)"
                   name="valor_pago"
                   type="number"
                   value={formData.valor_pago || 0}
                   onChange={handleChange}
                   variant="outlined"
-                  inputProps={{ min: 0, step: 0.01 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <TrendingUpIcon color="action" />
+                      </InputAdornment>
+                    ),
+                    inputProps: { min: 0, step: 0.01 }
+                  }}
                 />
                 {isFieldModified('valor_pago') && (
                   <Typography variant="caption" color="primary">
@@ -632,6 +710,36 @@ const EditLicense = () => {
                   </Typography>
                 )}
               </Grid>
+
+              {/* Campo para Valor Total - aparece apenas quando conta_pago é "Parcial" */}
+              {formData.conta_pago === 'Parcial' && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Valor Total (KZ)"
+                    name="valor_total"
+                    type="number"
+                    value={formData.valor_total || 0}
+                    onChange={handleChange}
+                    variant="outlined"
+                    required
+                    helperText="Valor total a ser pago pela licença"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <TrendingUpIcon color="action" />
+                        </InputAdornment>
+                      ),
+                      inputProps: { min: formData.valor_pago || 0, step: 0.01 }
+                    }}
+                  />
+                  {isFieldModified('valor_total') && (
+                    <Typography variant="caption" color="primary">
+                      ✓ Campo modificado
+                    </Typography>
+                  )}
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>

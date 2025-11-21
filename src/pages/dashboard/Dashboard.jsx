@@ -43,7 +43,6 @@ import axios from 'axios';
 const Dashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const navigate = useNavigate();
 
   const [stats, setStats] = useState({
@@ -58,7 +57,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -127,13 +127,17 @@ const Dashboard = () => {
 
     } catch (err) {
       console.error('Erro ao carregar dados do dashboard:', err);
-      setError('Erro ao carregar dados do dashboard');
+      setError('Conta Usuário não permitido visualizar essas informações');
+       showSnackbar('Erro ao carregar usuários', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
+  // Show snackbar notification
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
   const StatCard = ({ title, value, subtitle, icon, color, progress, onClick }) => (
     <Card 
       sx={{ 

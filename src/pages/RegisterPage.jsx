@@ -4,11 +4,12 @@ import { useNavigate, Link } from "react-router-dom";
 
 const RegisterPage = ({ setUser }) => {
   const [formData, setFormData] = useState({
-    firstName: "", // Corrigido para firstName
-    lastName: "",  // Corrigido para lastName
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
-    role: "user"   // Valor padrão em minúsculo
+    role: "user",
+    adminCode: "" // Novo campo para código de administrador
   });
   
   const navigate = useNavigate();
@@ -29,10 +30,17 @@ const RegisterPage = ({ setUser }) => {
     setIsLoading(true);
     setError("");
 
+    // Validação adicional no frontend
+    if (formData.role === "admin" && !formData.adminCode) {
+      setError("Código de administrador é obrigatório para registo como administrador");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const res = await axios.post("http://localhost:3000/api/v1/auth/register", formData);
-      localStorage.setItem("token", res.data.accessToken); // Corrigido para accessToken
-      setUser(res.data.user); // Corrigido para res.data.user
+      localStorage.setItem("token", res.data.accessToken);
+      setUser(res.data.user);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Falha ao fazer o registro");
@@ -203,6 +211,36 @@ const RegisterPage = ({ setUser }) => {
                 </div>
               </div>
             </div>
+
+            {/* Admin Code - Mostrar apenas quando role for admin */}
+            {formData.role === "admin" && (
+              <div>
+                <label htmlFor="adminCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Código de Administrador
+                </label>
+                <div className="relative">
+                  <input
+                    id="adminCode"
+                    name="adminCode"
+                    type="password"
+                    value={formData.adminCode}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    required={formData.role === "admin"}
+                    className="appearance-none relative block w-full px-4 py-3 pl-11 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 transition-all duration-200"
+                    placeholder="Digite o código de administrador"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Código especial necessário para registo como administrador
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

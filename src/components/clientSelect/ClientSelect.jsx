@@ -25,7 +25,11 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:3000/api/v1/client/clients');
-      setClients(response.data.data.clients || []);
+      const allClients = response.data.data.clients || [];
+      
+      // Filtrar apenas clientes não bloqueados
+      const activeClients = allClients.filter(client => !client.isBlocked);
+      setClients(activeClients);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
       setClients([]);
@@ -68,6 +72,18 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
             ),
           }}
         />
+      )}
+      renderOption={(props, option) => (
+        <Box component="li" {...props}>
+          <Box>
+            <Typography variant="body1" fontWeight="medium">
+              {option.clientName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              NIF: {option.nif} | ID: {option.client_id}
+            </Typography>
+          </Box>
+        </Box>
       )}
     />
   );

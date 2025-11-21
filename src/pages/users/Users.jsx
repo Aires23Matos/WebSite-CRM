@@ -68,7 +68,7 @@ const Users = () => {
       setError('');
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
-      setError('Erro ao carregar lista de usuários');
+      setError('Conta Usuário não permitido visualizar essas informações');
       showSnackbar('Erro ao carregar usuários', 'error');
     } finally {
       setLoading(false);

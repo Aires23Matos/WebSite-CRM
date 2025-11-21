@@ -48,7 +48,8 @@ import {
   CalendarToday as CalendarIcon,
   Paid as PaidIcon,
   Engineering as EngineeringIcon,
-  AccessTime as AccessTimeIcon
+  AccessTime as AccessTimeIcon,
+  Block as BlockIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -67,6 +68,12 @@ const Notifications = () => {
   const [selectedLicense, setSelectedLicense] = useState(null);
   const [detailDialog, setDetailDialog] = useState(false);
 
+  // Função para verificar se a licença está expirada
+  const isLicenseExpired = (expirationDate) => {
+    if (!expirationDate) return false;
+    return new Date(expirationDate) < new Date();
+  };
+
   useEffect(() => {
     fetchLicenses();
   }, []);
@@ -80,7 +87,17 @@ const Notifications = () => {
       }
       
       const response = await axios.get('http://localhost:3000/api/v1/licenses/licenses');
-      setLicenses(response.data.data.licenses || []);
+      const licensesData = response.data.data.licenses || [];
+      
+      // Atualizar automaticamente o estado das licenças expiradas
+      const updatedLicenses = licensesData.map(license => {
+        if (isLicenseExpired(license.data_da_expiracao) && license.estado === 'ativa') {
+          return { ...license, estado: 'expirada' };
+        }
+        return license;
+      });
+      
+      setLicenses(updatedLicenses);
       setError('');
     } catch (err) {
       console.error('Erro ao carregar licenças:', err);
@@ -99,82 +116,98 @@ const Notifications = () => {
     return diffDays;
   };
 
-const getExpirationStatus = (license) => {
-  const daysUntilExpiration = calculateDaysUntilExpiration(license.data_da_expiracao);
-  
-  // Primeiro verifica se a licença não está ativa
-  if (license.estado !== 'ativa') {
-    let inactiveColor = 'default';
-    let inactiveIcon = <ErrorIcon />;
-    let inactiveLabel = 'Inativa';
+  const getExpirationStatus = (license) => {
+    const daysUntilExpiration = calculateDaysUntilExpiration(license.data_da_expiracao);
     
-    // Define cores e ícones específicos para cada estado inativo
-    switch (license.estado) {
-      case 'pendente':
-        inactiveColor = 'warning';
-        inactiveIcon = <WarningIcon />;
-        inactiveLabel = 'Pendente';
-        break;
-      case 'cancelada':
-        inactiveColor = 'error';
-        inactiveIcon = <ErrorIcon />;
-        inactiveLabel = 'Cancelada';
-        break;
-      case 'suspensa':
-        inactiveColor = 'secondary';
-        inactiveIcon = <InfoIcon />;
-        inactiveLabel = 'Suspensa';
-        break;
-      default:
-        inactiveColor = 'default';
-        inactiveIcon = <ErrorIcon />;
-        inactiveLabel = 'Inativa';
+    // Verificar se a licença está expirada e ajustar automaticamente
+    let currentEstado = license.estado;
+    if (isLicenseExpired(license.data_da_expiracao) && currentEstado === 'ativa') {
+      currentEstado = 'expirada';
     }
     
-    return { 
-      status: 'inactive', 
-      label: inactiveLabel, 
-      color: inactiveColor, 
-      icon: inactiveIcon,
-      days: daysUntilExpiration 
-    };
-  }
-  
-  // Para licenças ativas, calcula o status baseado na data de expiração
-  if (daysUntilExpiration < 0) {
-    return { 
-      status: 'expired', 
-      label: 'Expirada', 
-      color: 'error', 
-      icon: <ErrorIcon />,
-      days: daysUntilExpiration 
-    };
-  } else if (daysUntilExpiration <= 7) {
-    return { 
-      status: 'critical', 
-      label: 'Crítica', 
-      color: 'error', 
-      icon: <WarningIcon />,
-      days: daysUntilExpiration 
-    };
-  } else if (daysUntilExpiration <= 30) {
-    return { 
-      status: 'warning', 
-      label: 'Atenção', 
-      color: 'warning', 
-      icon: <WarningIcon />,
-      days: daysUntilExpiration 
-    };
-  } else {
-    return { 
-      status: 'ok', 
-      label: 'Normal', 
-      color: 'success', 
-      icon: <CheckCircleIcon />,
-      days: daysUntilExpiration 
-    };
-  }
-};
+    // Primeiro verifica se a licença não está ativa
+    if (currentEstado !== 'ativa') {
+      let inactiveColor = 'default';
+      let inactiveIcon = <ErrorIcon />;
+      let inactiveLabel = 'Inativa';
+      
+      // Define cores e ícones específicos para cada estado inativo
+      switch (currentEstado) {
+        case 'pendente':
+          inactiveColor = 'warning';
+          inactiveIcon = <WarningIcon />;
+          inactiveLabel = 'Pendente';
+          break;
+        case 'expirada':
+          inactiveColor = 'error';
+          inactiveIcon = <BlockIcon />;
+          inactiveLabel = 'Expirada';
+          break;
+        case 'cancelada':
+          inactiveColor = 'error';
+          inactiveIcon = <ErrorIcon />;
+          inactiveLabel = 'Cancelada';
+          break;
+        case 'suspensa':
+          inactiveColor = 'secondary';
+          inactiveIcon = <InfoIcon />;
+          inactiveLabel = 'Suspensa';
+          break;
+        default:
+          inactiveColor = 'default';
+          inactiveIcon = <ErrorIcon />;
+          inactiveLabel = 'Inativa';
+      }
+      
+      return { 
+        status: 'inactive', 
+        label: inactiveLabel, 
+        color: inactiveColor, 
+        icon: inactiveIcon,
+        days: daysUntilExpiration,
+        estado: currentEstado
+      };
+    }
+    
+    // Para licenças ativas, calcula o status baseado na data de expiração
+    if (daysUntilExpiration < 0) {
+      return { 
+        status: 'expired', 
+        label: 'Expirada', 
+        color: 'error', 
+        icon: <BlockIcon />,
+        days: daysUntilExpiration,
+        estado: 'expirada'
+      };
+    } else if (daysUntilExpiration <= 7) {
+      return { 
+        status: 'critical', 
+        label: 'Crítica', 
+        color: 'error', 
+        icon: <WarningIcon />,
+        days: daysUntilExpiration,
+        estado: 'ativa'
+      };
+    } else if (daysUntilExpiration <= 30) {
+      return { 
+        status: 'warning', 
+        label: 'Atenção', 
+        color: 'warning', 
+        icon: <WarningIcon />,
+        days: daysUntilExpiration,
+        estado: 'ativa'
+      };
+    } else {
+      return { 
+        status: 'ok', 
+        label: 'Normal', 
+        color: 'success', 
+        icon: <CheckCircleIcon />,
+        days: daysUntilExpiration,
+        estado: 'ativa'
+      };
+    }
+  };
 
   const getExpiringLicenses = () => {
     return licenses.filter(license => {
@@ -184,33 +217,47 @@ const getExpirationStatus = (license) => {
   };
 
   const getExpiredLicenses = () => {
-    return licenses.filter(license => getExpirationStatus(license).status === 'expired');
+    return licenses.filter(license => {
+      const status = getExpirationStatus(license);
+      return status.status === 'expired' || status.estado === 'expirada';
+    });
   };
 
   const getActiveLicenses = () => {
-    return licenses.filter(license => getExpirationStatus(license).status === 'ok');
+    return licenses.filter(license => {
+      const status = getExpirationStatus(license);
+      return status.status === 'ok' && status.estado === 'ativa';
+    });
   };
 
   const getInactiveLicenses = () => {
+    return licenses.filter(license => {
+      const status = getExpirationStatus(license);
+      return status.estado === 'pendente' || 
+             status.estado === 'cancelada' || 
+             status.estado === 'suspensa';
+    });
+  };
+
+  const getPaymentStatusLicenses = () => {
     return licenses.filter(license => 
-      license.estado === 'pendente' || 
-      license.estado === 'cancelada' || 
-      license.estado === 'suspensa'
+      license.conta_pago === 'Parcial' && license.valor_total > 0
     );
   };
 
   const getNotificationCount = () => {
-    return getExpiringLicenses().length + getExpiredLicenses().length;
+    return getExpiringLicenses().length + getExpiredLicenses().length + getPaymentStatusLicenses().length;
   };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-AO', {
       style: 'currency',
       currency: 'AOA'
-    }).format(value);
+    }).format(value || 0);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -282,14 +329,21 @@ const getExpirationStatus = (license) => {
   const LicenseCard = ({ license }) => {
     const status = getExpirationStatus(license);
     const isUrgent = status.status === 'critical' || status.status === 'expired';
+    const isPartialPayment = license.conta_pago === 'Parcial' && license.valor_total > 0;
 
     return (
       <Card 
         sx={{ 
           mb: 2,
-          borderLeft: `4px solid ${theme.palette[status.color].main}`,
+          borderLeft: `4px solid ${
+            isPartialPayment ? theme.palette.warning.main : theme.palette[status.color].main
+          }`,
           transition: 'all 0.3s ease-in-out',
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette[status.color].main, 0.03)} 100%)`,
+          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${
+            isPartialPayment 
+              ? alpha(theme.palette.warning.main, 0.05)
+              : alpha(theme.palette[status.color].main, 0.03)
+          } 100%)`,
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: 4
@@ -317,19 +371,31 @@ const getExpirationStatus = (license) => {
                   </Box>
                   <Box flex={1}>
                     <Typography variant="h6" component="h3" fontWeight="bold" noWrap>
-                      {license.cliente.clientName}
+                      {license.cliente?.clientName || 'Cliente não encontrado'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      NIF: {license.cliente.nif}
+                      NIF: {license.cliente?.nif || 'N/A'}
                     </Typography>
                   </Box>
-                  <Chip
-                    icon={status.icon}
-                    label={status.label}
-                    color={status.color}
-                    size="small"
-                    sx={{ fontWeight: 600 }}
-                  />
+                  <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+                    <Chip
+                      icon={status.icon}
+                      label={status.label}
+                      color={status.color}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    {isPartialPayment && (
+                      <Chip
+                        icon={<PaidIcon />}
+                        label="Pagamento Parcial"
+                        color="warning"
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    )}
+                  </Box>
                 </Box>
 
                 <Grid container spacing={2}>
@@ -363,6 +429,16 @@ const getExpirationStatus = (license) => {
                       <strong>Técnico:</strong> {license.tecnico}
                     </Typography>
                   </Grid>
+                  {isPartialPayment && (
+                    <Grid item xs={12}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <PaidIcon color="warning" fontSize="small" />
+                        <Typography variant="body2" color="warning.main" fontWeight="medium">
+                          <strong>Pagamento:</strong> {formatCurrency(license.valor_pago)} de {formatCurrency(license.valor_total)}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
                 </Grid>
               </Box>
             </Box>
@@ -389,7 +465,7 @@ const getExpirationStatus = (license) => {
     <Box>
       {/* Stats Skeleton */}
       <Grid container spacing={3} mb={4}>
-        {[1, 2, 3, 4].map((item) => (
+        {[1, 2, 3, 4, 5].map((item) => (
           <Grid item xs={12} sm={6} md={3} key={item}>
             <Skeleton variant="rounded" height={140} />
           </Grid>
@@ -413,6 +489,7 @@ const getExpirationStatus = (license) => {
   const expiredLicenses = getExpiredLicenses();
   const activeLicenses = getActiveLicenses();
   const inactiveLicenses = getInactiveLicenses();
+  const paymentStatusLicenses = getPaymentStatusLicenses();
   const notificationCount = getNotificationCount();
 
   return (
@@ -527,22 +604,31 @@ const getExpirationStatus = (license) => {
             title="Expiradas"
             value={expiredLicenses.length}
             subtitle="Necessitam renovação"
-            icon={<ErrorIcon />}
+            icon={<BlockIcon />}
             color="error"
             onClick={() => setActiveTab(2)}
           />
         </Grid>
-         <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Pagamento Parcial"
+            value={paymentStatusLicenses.length}
+            subtitle="Pagamentos incompletos"
+            icon={<PaidIcon />}
+            color="warning"
+            onClick={() => setActiveTab(5)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Pendentes"
             value={inactiveLicenses.length}
-            subtitle="Em estado normal"
-            icon={<CheckCircleIcon />}
+            subtitle="Licenças inativas"
+            icon={<WarningIcon />}
             color="warning"
             onClick={() => setActiveTab(3)}
           />
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Ativas"
@@ -553,7 +639,6 @@ const getExpirationStatus = (license) => {
             onClick={() => setActiveTab(4)}
           />
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total"
@@ -588,7 +673,7 @@ const getExpirationStatus = (license) => {
           <Alert 
             severity="error" 
             sx={{ mb: 3 }}
-            icon={<ErrorIcon />}
+            icon={<BlockIcon />}
             action={
               <Button color="inherit" size="small" onClick={() => setActiveTab(2)}>
                 Ver Detalhes
@@ -596,6 +681,23 @@ const getExpirationStatus = (license) => {
             }
           >
             <strong>Urgente!</strong> Existem {expiredLicenses.length} licenças expiradas que necessitam de atenção imediata.
+          </Alert>
+        </Fade>
+      )}
+
+      {paymentStatusLicenses.length > 0 && (
+        <Fade in={paymentStatusLicenses.length > 0}>
+          <Alert 
+            severity="warning" 
+            sx={{ mb: 3 }}
+            icon={<PaidIcon />}
+            action={
+              <Button color="inherit" size="small" onClick={() => setActiveTab(5)}>
+                Ver Detalhes
+              </Button>
+            }
+          >
+            <strong>Atenção!</strong> Existem {paymentStatusLicenses.length} licenças com pagamento parcial pendente.
           </Alert>
         </Fade>
       )}
@@ -653,7 +755,7 @@ const getExpirationStatus = (license) => {
               } 
             />
             <Tab 
-              icon={<ErrorIcon />} 
+              icon={<BlockIcon />} 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
                   Expiradas
@@ -664,7 +766,7 @@ const getExpirationStatus = (license) => {
               } 
             />
             <Tab 
-              icon={<ErrorIcon />} 
+              icon={<WarningIcon />} 
               label={
                 <Box display="flex" alignItems="center" gap={1}>
                   Pendentes
@@ -685,7 +787,17 @@ const getExpirationStatus = (license) => {
                 </Box>
               } 
             />
-            
+            <Tab 
+              icon={<PaidIcon />} 
+              label={
+                <Box display="flex" alignItems="center" gap={1}>
+                  Pagamento Parcial
+                  {paymentStatusLicenses.length > 0 && (
+                    <Chip label={paymentStatusLicenses.length} color="warning" size="small" />
+                  )}
+                </Box>
+              } 
+            />
           </Tabs>
 
           <Divider />
@@ -727,7 +839,7 @@ const getExpirationStatus = (license) => {
                           {expiringLicenses.slice(0, 3).map((license) => (
                             <ListItem key={license._id}>
                               <ListItemText
-                                primary={license.cliente.clientName}
+                                primary={license.cliente?.clientName || 'Cliente não encontrado'}
                                 secondary={`Expira em ${formatDate(license.data_da_expiracao)}`}
                               />
                               <Chip
@@ -763,7 +875,7 @@ const getExpirationStatus = (license) => {
                         }}
                       >
                         <Box display="flex" alignItems="center" gap={1} mb={2}>
-                          <ErrorIcon color="error" />
+                          <BlockIcon color="error" />
                           <Typography variant="h6" fontWeight="bold">
                             Licenças Expiradas
                           </Typography>
@@ -772,7 +884,7 @@ const getExpirationStatus = (license) => {
                           {expiredLicenses.slice(0, 3).map((license) => (
                             <ListItem key={license._id}>
                               <ListItemText
-                                primary={license.cliente.clientName}
+                                primary={license.cliente?.clientName || 'Cliente não encontrado'}
                                 secondary={`Expirou em ${formatDate(license.data_da_expiracao)}`}
                               />
                               <Chip
@@ -790,6 +902,51 @@ const getExpirationStatus = (license) => {
                             sx={{ mt: 1 }}
                           >
                             Ver todas ({expiredLicenses.length})
+                          </Button>
+                        )}
+                      </Paper>
+                    </Grid>
+                  )}
+
+                  {/* Partial Payments */}
+                  {paymentStatusLicenses.length > 0 && (
+                    <Grid item xs={12} md={6}>
+                      <Paper 
+                        variant="outlined" 
+                        sx={{ 
+                          p: 2,
+                          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.warning.main, 0.05)} 100%)`,
+                          border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`
+                        }}
+                      >
+                        <Box display="flex" alignItems="center" gap={1} mb={2}>
+                          <PaidIcon color="warning" />
+                          <Typography variant="h6" fontWeight="bold">
+                            Pagamentos Parciais
+                          </Typography>
+                        </Box>
+                        <List dense>
+                          {paymentStatusLicenses.slice(0, 3).map((license) => (
+                            <ListItem key={license._id}>
+                              <ListItemText
+                                primary={license.cliente?.clientName || 'Cliente não encontrado'}
+                                secondary={`${formatCurrency(license.valor_pago)} de ${formatCurrency(license.valor_total)}`}
+                              />
+                              <Chip
+                                label="Parcial"
+                                color="warning"
+                                size="small"
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                        {paymentStatusLicenses.length > 3 && (
+                          <Button 
+                            size="small" 
+                            onClick={() => setActiveTab(5)}
+                            sx={{ mt: 1 }}
+                          >
+                            Ver todas ({paymentStatusLicenses.length})
                           </Button>
                         )}
                       </Paper>
@@ -878,7 +1035,7 @@ const getExpirationStatus = (license) => {
                 </Box>
                 <Chip 
                   label={`${inactiveLicenses.length} licenças`} 
-                  color="error" 
+                  color="warning" 
                   variant="outlined"
                   sx={{ fontWeight: 600 }}
                 />
@@ -927,6 +1084,38 @@ const getExpirationStatus = (license) => {
               )}
             </Box>
           </TabPanel>
+
+          {/* Partial Payment Tab */}
+          <TabPanel value={activeTab} index={5}>
+            <Box px={{ xs: 2, sm: 3 }}>
+              <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2} mb={3}>
+                <Box>
+                  <Typography variant="h6" gutterBottom fontWeight="bold">
+                    Pagamentos Parciais
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Licenças com pagamento parcial pendente
+                  </Typography>
+                </Box>
+                <Chip 
+                  label={`${paymentStatusLicenses.length} licenças`} 
+                  color="warning" 
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+
+              {paymentStatusLicenses.length === 0 ? (
+                <Alert severity="success">
+                  Não há licenças com pagamento parcial pendente.
+                </Alert>
+              ) : (
+                paymentStatusLicenses.map(license => (
+                  <LicenseCard key={license._id} license={license} />
+                ))
+              )}
+            </Box>
+          </TabPanel>
         </CardContent>
       </Card>
 
@@ -957,7 +1146,7 @@ const getExpirationStatus = (license) => {
                   Cliente
                 </Typography>
                 <Typography variant="body1" fontWeight="medium">
-                  {selectedLicense.cliente.clientName}
+                  {selectedLicense.cliente?.clientName || 'Cliente não encontrado'}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -965,7 +1154,7 @@ const getExpirationStatus = (license) => {
                   NIF
                 </Typography>
                 <Typography variant="body1">
-                  {selectedLicense.cliente.nif}
+                  {selectedLicense.cliente?.nif || 'N/A'}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1027,18 +1216,59 @@ const getExpirationStatus = (license) => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">
+                  Status do Pagamento
+                </Typography>
+                <Chip
+                  label={selectedLicense.conta_pago}
+                  color={
+                    selectedLicense.conta_pago === 'Pago' ? 'success' :
+                    selectedLicense.conta_pago === 'Parcial' ? 'warning' : 'error'
+                  }
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" color="text.secondary">
                   Valor Pago
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" fontWeight="medium">
                   {formatCurrency(selectedLicense.valor_pago)}
                 </Typography>
               </Grid>
+              {selectedLicense.conta_pago === 'Parcial' && selectedLicense.valor_total && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Valor Total
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(selectedLicense.valor_total)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Saldo Pendente
+                    </Typography>
+                    <Typography variant="body1" color="warning.main" fontWeight="bold">
+                      {formatCurrency(selectedLicense.valor_total - selectedLicense.valor_pago)}
+                    </Typography>
+                  </Grid>
+                </>
+              )}
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Validade
                 </Typography>
                 <Typography variant="body1">
                   {selectedLicense.validade_em_mes} meses
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Localização
+                </Typography>
+                <Typography variant="body1">
+                  {selectedLicense.localizacao || 'N/A'}
                 </Typography>
               </Grid>
             </Grid>
@@ -1056,7 +1286,7 @@ const getExpirationStatus = (license) => {
             variant="contained" 
             onClick={() => {
               setDetailDialog(false);
-              navigate(`/client/getById/${selectedLicense?.client_id}`);
+              navigate(`/licenses/update/${selectedLicense?._id}`);
             }}
             sx={{ 
               fontWeight: 600,
@@ -1066,7 +1296,7 @@ const getExpirationStatus = (license) => {
               }
             }}
           >
-            Ver Cliente
+            Editar Licença
           </Button>
         </DialogActions>
       </Dialog>

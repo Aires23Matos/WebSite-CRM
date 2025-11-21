@@ -22,7 +22,11 @@ const CreateClient = ({ value, onChange, error, helperText, required = false }) 
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:3000/api/v1/client/clients');
-      setClients(response.data.data.clients || []);
+      const allClients = response.data.data.clients || [];
+      
+      // Filtrar apenas clientes não bloqueados
+      const activeClients = allClients.filter(client => !client.isBlocked);
+      setClients(activeClients);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
       setClients([]);
@@ -49,7 +53,6 @@ const CreateClient = ({ value, onChange, error, helperText, required = false }) 
       }
       renderInput={(params) => (
         <TextField
-        
           {...params}
           label="Selecionar Cliente"
           required={required}

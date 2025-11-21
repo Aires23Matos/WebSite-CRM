@@ -46,7 +46,7 @@ const ViewUser = () => {
         setError('');
       } catch (err) {
         console.error('Erro ao carregar usuário:', err);
-        setError('Erro ao carregar dados do usuário');
+        setError('Conta Usuário não permitido visualizar essas informações');
       } finally {
         setLoading(false);
       }

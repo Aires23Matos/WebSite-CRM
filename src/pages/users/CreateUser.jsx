@@ -24,7 +24,8 @@ import {
   InputAdornment,
   IconButton,
   Tooltip,
-  Fade
+  Fade,
+  Collapse
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -37,20 +38,23 @@ import {
   Info as InfoIcon,
   CheckCircle as CheckCircleIcon,
   Security as SecurityIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  VpnKey as KeyIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 
 const CreateUser = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -59,7 +63,8 @@ const CreateUser = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'user'
+    role: 'user',
+    adminCode: '' // Novo campo para código de administrador
   });
 
   const [formErrors, setFormErrors] = useState({
@@ -67,7 +72,8 @@ const CreateUser = () => {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    adminCode: ''
   });
 
   const steps = ['Informações Básicas', 'Credenciais de Acesso', 'Revisão e Confirmação'];
@@ -112,6 +118,10 @@ const CreateUser = () => {
         } else if (formData.password !== formData.confirmPassword) {
           errors.confirmPassword = 'As senhas não coincidem';
         }
+        // Validação do código de administrador
+        if (formData.role === 'admin' && !formData.adminCode.trim()) {
+          errors.adminCode = 'Código de administrador é obrigatório';
+        }
         break;
       default:
         break;
@@ -139,7 +149,7 @@ const CreateUser = () => {
 
     try {
       // Remove confirmPassword before sending
-      const { confirmPassword, ...userData } = formData;
+      const {...userData } = formData;
       
       await axios.post('http://localhost:3000/api/v1/auth/register', userData);
       setSuccess('Usuário criado com sucesso!');
@@ -161,6 +171,10 @@ const CreateUser = () => {
 
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const toggleAdminCodeVisibility = () => {
+    setShowAdminCode(!showAdminCode);
   };
 
   const getStepContent = (step) => {
@@ -314,6 +328,59 @@ const CreateUser = () => {
                 </MenuItem>
               </TextField>
             </Grid>
+
+            {/* Campo para código de administrador - aparece apenas quando role é admin */}
+            <Grid item xs={12}>
+              <Collapse in={formData.role === 'admin'}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                    backgroundColor: alpha(theme.palette.warning.main, 0.05),
+                    borderRadius: 2
+                  }}
+                >
+                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <WarningIcon color="warning" />
+                    <Typography variant="subtitle1" fontWeight="bold" color="warning.main">
+                      Código de Administrador Requerido
+                    </Typography>
+                  </Box>
+                  
+                  <TextField
+                    fullWidth
+                    label="Código de Administrador"
+                    name="adminCode"
+                    type={showAdminCode ? 'text' : 'password'}
+                    value={formData.adminCode}
+                    onChange={handleChange}
+                    error={!!formErrors.adminCode}
+                    helperText={formErrors.adminCode || "Código especial necessário para criar conta de administrador"}
+                    required={formData.role === 'admin'}
+                    variant="outlined"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleAdminCodeVisibility} edge="end">
+                            {showAdminCode ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <KeyIcon color="warning" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Este código é necessário para verificar que tem autorização para criar contas de administrador.
+                  </Typography>
+                </Paper>
+              </Collapse>
+            </Grid>
           </Grid>
         );
       case 2:
@@ -359,8 +426,29 @@ const CreateUser = () => {
                     </Typography>
                   </Box>
                 </Grid>
+                {formData.role === 'admin' && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Código de Admin:
+                    </Typography>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <KeyIcon color="warning" fontSize="small" />
+                      <Typography variant="body1" fontWeight="medium">
+                        {formData.adminCode ? '••••••••' : 'Não fornecido'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
               </Grid>
             </Paper>
+            
+            {formData.role === 'admin' && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Atenção:</strong> Está a criar uma conta de administrador com acesso completo ao sistema.
+                </Typography>
+              </Alert>
+            )}
             
             <Alert severity="info" sx={{ mb: 2 }}>
               <Typography variant="body2">
@@ -584,6 +672,16 @@ const CreateUser = () => {
                     <strong>Usuário:</strong> Acesso básico às funcionalidades
                   </Typography>
                 </Box>
+              </Box>
+
+              <Box mb={3}>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom display="flex" alignItems="center" gap={1}>
+                  <KeyIcon color="warning" fontSize="small" />
+                  Código de Administrador
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Para criar contas de administrador é necessário fornecer um código especial de verificação.
+                </Typography>
               </Box>
 
               <Box mb={3}>
