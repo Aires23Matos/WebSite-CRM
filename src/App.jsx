@@ -6,22 +6,20 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { useEffect, useState } from "react";
 import Home from "./pages/home/Home";
-import List from "./pages/list/List";
-import New from "./pages/new/New";
+
 import axios from "axios";
 
 // Páginas específicas para cada rota
 import Dashboard from "./pages/dashboard/Dashboard";
 import Users from "./pages/users/Users";
 import Clients from "./pages/clients/Clients";
-import Status from "./pages/status/Status";
+
 import Notifications from "./pages/notifications/Notifications";
 import RegisterClient from "./pages/register-client/RegisterClient";
 import Address from "./pages/address/Address";
 import Contacts from "./pages/contacts/Contacts";
 import License from "./pages/license/License";
 import Responsible from "./pages/responsible/Responsible";
-import SystemHealth from "./pages/system-health/SystemHealth";
 import Settings from "./pages/settings/Settings";
 import Profile from "./pages/profile/Profile";
 
@@ -32,13 +30,10 @@ import ViewUser from "./pages/users/ViewUser";
 import CreateClient from "./pages/clients/CreateClient";
 import EditClient from "./pages/clients/EditClient";
 import ViewClient from "./pages/clients/ViewClient";
-import ViewContact from "./pages/contacts/ViewContact";
+
 import EditContact from "./pages/contacts/EditContact";
-import ViewAddress from "./pages/address/ViewAddress";
 import EditAddress from "./pages/address/EditAddress";
-import ViewLicense from "./pages/license/ViewLicense";
 import EditLicense from "./pages/license/EditLicense";
-import ViewAccountable from "./pages/responsible/ViewAccountable";
 import EditAccountable from "./pages/responsible/EditAccountable";
 
 function App() {
@@ -366,7 +361,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-  
+
         <Route
           path="/contacts/:contact_id"
           element={

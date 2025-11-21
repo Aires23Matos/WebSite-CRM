@@ -1,16 +1,22 @@
 // components/ClientSelect.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   Autocomplete,
   CircularProgress,
   Box,
   Typography,
-  Chip
-} from '@mui/material';
-import axios from 'axios';
+  Chip,
+} from "@mui/material";
+import axios from "axios";
 
-const ClientSelect = ({ value, onChange, error, helperText, required = false }) => {
+const ClientSelect = ({
+  value,
+  onChange,
+  error,
+  helperText,
+  required = false,
+}) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -24,14 +30,16 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/client/clients');
+      const response = await axios.get(
+        "http://localhost:3000/api/v1/client/clients"
+      );
       const allClients = response.data.data.clients || [];
-      
+
       // Filtrar apenas clientes não bloqueados
-      const activeClients = allClients.filter(client => !client.isBlocked);
+      const activeClients = allClients.filter((client) => !client.isBlocked);
       setClients(activeClients);
     } catch (error) {
-      console.error('Erro ao carregar clientes:', error);
+      console.error("Erro ao carregar clientes:", error);
       setClients([]);
     } finally {
       setLoading(false);
@@ -40,7 +48,7 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
 
   return (
     <Autocomplete
-      style={{paddingRight:"130px"}}
+      style={{ paddingRight: "130px" }}
       open={open}
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
@@ -48,15 +56,17 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
       onChange={(event, newValue) => onChange(newValue)}
       options={clients}
       loading={loading}
-      getOptionLabel={(option) => 
-        typeof option === 'string' ? option : `${option.clientName} - ${option.nif}`
+      getOptionLabel={(option) =>
+        typeof option === "string"
+          ? option
+          : `${option.clientName} - ${option.nif}`
       }
-      isOptionEqualToValue={(option, value) => 
+      isOptionEqualToValue={(option, value) =>
         option.client_id === value.client_id
       }
       renderInput={(params) => (
         <TextField
-          style={{width: "220%"}}
+          style={{ width: "220%" }}
           {...params}
           label="Selecionar Cliente"
           required={required}
@@ -66,7 +76,9 @@ const ClientSelect = ({ value, onChange, error, helperText, required = false }) 
             ...params.InputProps,
             endAdornment: (
               <>
-                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                {loading ? (
+                  <CircularProgress color="inherit" size={20} />
+                ) : null}
                 {params.InputProps.endAdornment}
               </>
             ),
