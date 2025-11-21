@@ -48,6 +48,12 @@ const EditLicense = () => {
     return new Date(expirationDate) < new Date();
   };
 
+  // Função para verificar se a licença está ativa (não expirada)
+  const isLicenseActive = (expirationDate) => {
+    if (!expirationDate) return false;
+    return new Date(expirationDate) >= new Date();
+  };
+
   // Função para normalizar datas para o backend (CORRIGIDA)
   const normalizeDateForBackend = (dateString) => {
     if (!dateString) return null;
@@ -195,6 +201,25 @@ const EditLicense = () => {
     }
   }, [license_id]);
 
+  // Efeito para atualizar automaticamente o estado quando as datas são atualizadas
+  useEffect(() => {
+    // Se a data de expiração foi modificada e a licença agora está ativa
+    if (formData.data_da_expiracao && isLicenseActive(formData.data_da_expiracao) && formData.estado === "expirada") {
+      setFormData(prev => ({
+        ...prev,
+        estado: "ativa"
+      }));
+    }
+    
+    // Se a data de expiração foi modificada e a licença agora está expirada
+    if (formData.data_da_expiracao && isLicenseExpired(formData.data_da_expiracao) && formData.estado === "ativa") {
+      setFormData(prev => ({
+        ...prev,
+        estado: "expirada"
+      }));
+    }
+  }, [formData.data_da_expiracao]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -204,6 +229,16 @@ const EditLicense = () => {
         ...prev,
         [name]: value,
         valor_total: prev.valor_total > prev.valor_pago ? prev.valor_total : prev.valor_pago + 1000
+      }));
+      return;
+    }
+
+    // Quando o status de pagamento muda de "Parcial" para "Pago"
+    if (name === 'conta_pago' && value === 'Pago' && formData.conta_pago === 'Parcial') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        valor_pago: prev.valor_total // Copia o valor total para o valor pago
       }));
       return;
     }
@@ -309,6 +344,12 @@ const EditLicense = () => {
       if (isLicenseExpired(formData.data_da_expiracao) && formData.estado === 'ativa') {
         changedData.estado = 'expirada';
         setFormData(prev => ({ ...prev, estado: 'expirada' }));
+      }
+
+      // Verificar se a licença está ativa e ajustar o estado automaticamente
+      if (isLicenseActive(formData.data_da_expiracao) && formData.estado === 'expirada') {
+        changedData.estado = 'ativa';
+        setFormData(prev => ({ ...prev, estado: 'ativa' }));
       }
 
       // Normalizar datas antes de enviar
@@ -418,6 +459,13 @@ const EditLicense = () => {
           {isLicenseExpired(formData.data_da_expiracao) && (
             <Alert severity="warning" sx={{ mb: 3 }}>
               Esta licença está expirada. O estado foi automaticamente ajustado para "Expirada".
+            </Alert>
+          )}
+
+          {/* Alerta se a licença está ativa (após atualização de datas) */}
+          {isLicenseActive(formData.data_da_expiracao) && formData.estado === "ativa" && isFieldModified('data_da_expiracao') && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              A licença agora está ativa! O estado foi automaticamente atualizado.
             </Alert>
           )}
 

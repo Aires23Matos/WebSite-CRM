@@ -44,7 +44,6 @@ import { useNavigate } from 'react-router-dom';
 const Users = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
