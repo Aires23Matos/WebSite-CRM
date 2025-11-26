@@ -32,6 +32,10 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+const url = urlApi;
 
 const RegisterClient = () => {
   const navigate = useNavigate();
@@ -56,7 +60,7 @@ const RegisterClient = () => {
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:3000/api/v1/client/clients`);
+      const response = await axios.get(`${url}/api/v1/client/clients`);
       // Ajuste conforme a estrutura da sua resposta da API
       setClients(response.data.data?.clients || response.data.data || []);
     } catch (err) {
@@ -137,7 +141,7 @@ const RegisterClient = () => {
         nif: formData.nif
       };
 
-      const response = await axios.post(`http://localhost:3000/api/v1/auth/register/client`, payload);
+      const response = await axios.post(`${url}/api/v1/auth/register/client`, payload);
       
       setSuccess(response.data.message || 'Cliente criado com sucesso!');
       
@@ -191,7 +195,7 @@ const RegisterClient = () => {
 
     try {
       const clientId =  deleteDialog.client.client_id;
-      await axios.delete(`http://localhost:3000/api/v1/client/delete/${clientId}`);
+      await axios.delete(`${url}/api/v1/client/delete/${clientId}`);
       setSuccess('Cliente excluído com sucesso!');
       fetchClients(); // Recarregar lista
     } catch (err) {

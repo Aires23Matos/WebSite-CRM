@@ -25,7 +25,11 @@ import {
   CalendarToday as CalendarIcon,
   AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
 
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 const ViewUser = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -41,7 +45,7 @@ const ViewUser = () => {
     const fetchUser = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:3000/api/v1/users/${id}`);
+        const response = await axios.get(`${url}/api/v1/users/${id}`);
         setUser(response.data.user);
         setError('');
       } catch (err) {

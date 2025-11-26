@@ -40,6 +40,11 @@ import {
   AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const Users = () => {
   const theme = useTheme();
@@ -62,7 +67,7 @@ const Users = () => {
         setLoading(true);
       }
       
-      const response = await axios.get('http://localhost:3000/api/v1/users/');
+      const response = await axios.get(`${url}/api/v1/users/`);
       setUsers(response.data.users || []);
       setError('');
     } catch (err) {
@@ -82,7 +87,7 @@ const Users = () => {
   // Delete user function
   const deleteUser = async (userId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/v1/users/delete/${userId}`);
+      await axios.delete(`${url}/api/v1/users/delete/${userId}`);
       setUsers(users.filter(user => user._id !== userId));
       showSnackbar('Usuário deletado com sucesso', 'success');
       setDeleteDialog({ open: false, user: null });

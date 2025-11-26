@@ -21,6 +21,11 @@ import {
   Person as PersonIcon
 } from '@mui/icons-material';
 import CreateClient from "../clients/CreateClient";
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const EditAccountable = () => {
   const navigate = useNavigate();
@@ -42,7 +47,7 @@ const EditAccountable = () => {
   useEffect(() => {
     const fetchAccountable = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/v1/accountable/${accountable_id}`);
+        const response = await axios.get(`${url}/api/v1/accountable/${accountable_id}`);
         // CORREÇÃO: Acessar a propriedade correta da resposta
         const accountable = response.data.data;
         
@@ -89,7 +94,7 @@ const EditAccountable = () => {
 
     try {
       // CORREÇÃO: Usar _id na URL
-      const response = await axios.put(`http://localhost:3000/api/v1/accountable/${accountable_id}`, formData);
+      const response = await axios.put(`${url}/api/v1/accountable/${accountable_id}`, formData);
       setSuccess(response.data.message || 'Responsável atualizado com sucesso!');
       
       // Redirecionar após sucesso

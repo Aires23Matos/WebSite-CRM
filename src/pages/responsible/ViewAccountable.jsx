@@ -23,6 +23,11 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+// const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const ViewAccountable = () => {
   const { accountable_id } = useParams();
@@ -39,7 +44,7 @@ const ViewAccountable = () => {
   const fetchAccountable = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3000/api/v1/accountable/${accountable_id}`);
+      const response = await axios.get(`${url}/api/v1/accountable/${accountable_id}`);
       setAccountable(response.data.data);
       
       // Buscar informações do cliente se necessário
@@ -56,7 +61,7 @@ const ViewAccountable = () => {
 
   const fetchClientInfo = async (clientId) => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/v1/client/getById/${clientId}`);
+      const response = await axios.get(`${url}/api/v1/client/getById/${clientId}`);
       setClient(response.data.data);
     } catch (err) {
       console.error('Erro ao carregar dados do cliente:', err);
@@ -66,7 +71,7 @@ const ViewAccountable = () => {
   const handleDelete = async () => {
     if (window.confirm('Tem certeza que deseja excluir este responsável?')) {
       try {
-        await axios.delete(`http://localhost:3000/api/v1/accountable/${accountable_id}`);
+        await axios.delete(`${url}/api/v1/accountable/${accountable_id}`);
         navigate('/clients');
       } catch (err) {
         setError('Erro ao excluir responsável');

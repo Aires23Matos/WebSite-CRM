@@ -23,6 +23,11 @@ import {
   Person as PersonIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const EditUser = () => {
   const { id } = useParams();
@@ -50,21 +55,21 @@ const EditUser = () => {
   const debugToken = () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) {
-      console.log('❌ Nenhum token encontrado');
+      console.log(' Nenhum token encontrado');
       return null;
     }
     
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('🔐 TOKEN DEBUG:');
-      console.log('📋 Payload completo:', payload);
-      console.log('👤 userId (do token):', payload.userId);
-      console.log('🎯 ID da URL:', id);
-      console.log('❓ IDs coincidem?', payload.userId === id);
+      console.log(' TOKEN DEBUG:');
+      console.log(' Payload completo:', payload);
+      console.log(' userId (do token):', payload.userId);
+      console.log(' ID da URL:', id);
+      console.log(' IDs coincidem?', payload.userId === id);
       
       return payload;
     } catch (err) {
-      console.log('❌ Erro ao decodificar token:', err);
+      console.log(' Erro ao decodificar token:', err);
       return null;
     }
   };
@@ -100,7 +105,7 @@ const EditUser = () => {
         console.log(`🔍 Buscando usuário ID: ${id}`);
 
         const response = await axios.get(
-          `http://localhost:3000/api/v1/users/${id}?t=${timestamp}`,
+          `${url}/api/v1/users/${id}?t=${timestamp}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -110,7 +115,7 @@ const EditUser = () => {
         );
         
         const userData = response.data.user;
-        console.log('📥 Dados recebidos do usuário:', userData);
+        console.log(' Dados recebidos do usuário:', userData);
 
         setUser(userData);
         const initialFormData = {
@@ -123,7 +128,7 @@ const EditUser = () => {
         setOriginalData(initialFormData);
         setError('');
       } catch (err) {
-        console.error('❌ Erro ao carregar usuário:', err);
+        console.error(' Erro ao carregar usuário:', err);
         setError(err.response?.data?.message || 'Erro ao carregar dados do usuário');
       } finally {
         setLoading(false);
@@ -192,12 +197,12 @@ const EditUser = () => {
       // DEBUG: Verificar token antes de enviar
       const tokenData = debugToken();
       if (tokenData) {
-        console.log('⚠️ ATENÇÃO: Token userId:', tokenData.userId, 'vs URL id:', id);
-        console.log('⚠️ Se forem diferentes, o problema está no backend usando userId do token');
+        console.log(' ATENÇÃO: Token userId:', tokenData.userId, 'vs URL id:', id);
+        console.log(' Se forem diferentes, o problema está no backend usando userId do token');
       }
 
       const response = await axios.put(
-        `http://localhost:3000/api/v1/users/update/${id}`,
+        `${url}/api/v1/users/update/${id}`,
         updatePayload,
         {
           headers: {
@@ -207,7 +212,7 @@ const EditUser = () => {
         }
       );
       
-      console.log('✅ Resposta da API:', response.data);
+      console.log(' Resposta da API:', response.data);
 
       setSuccess('Usuário atualizado com sucesso!');
       
@@ -226,7 +231,7 @@ const EditUser = () => {
         navigate('/users');
       }, 2000);
     } catch (err) {
-      console.error('❌ Erro ao atualizar usuário:', err);
+      console.error(' Erro ao atualizar usuário:', err);
       
       let errorMessage = 'Erro ao atualizar usuário';
       if (err.response?.data?.message) {

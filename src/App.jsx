@@ -35,6 +35,11 @@ import EditContact from "./pages/contacts/EditContact";
 import EditAddress from "./pages/address/EditAddress";
 import EditLicense from "./pages/license/EditLicense";
 import EditAccountable from "./pages/responsible/EditAccountable";
+import { urlApi } from "../public/url/url";
+
+//const url = 'http:localhost:3000'
+
+const url = urlApi;
 
 function App() {
   const [user, setUser] = useState(null);
@@ -51,7 +56,7 @@ function App() {
           axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
           // Chamada real à API para verificar o token e obter dados do usuário
-          const res = await axios.get("http://localhost:3000/api/v1/auth/", {
+          const res = await axios.get(`${url}/api/v1/auth/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

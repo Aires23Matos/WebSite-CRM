@@ -52,6 +52,11 @@ import {
   Info as InfoIcon
 } from '@mui/icons-material';
 import CreateClient from "../clients/CreateClient";
+import { urlApi } from '../../../public/url/url';
+
+// const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const Responsible = () => {
   const navigate = useNavigate();
@@ -85,7 +90,7 @@ const Responsible = () => {
     }
     
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/accountable/accountables');
+      const response = await axios.get(`${url}/api/v1/accountable/accountables`);
       setAccountables(response.data.data?.accountables || []);
       setError('');
     } catch (err) {
@@ -151,7 +156,7 @@ const Responsible = () => {
       console.log('Enviando dados:', formData);
       
       // CORREÇÃO: Usando a chamada API correta
-      const response = await axios.post('http://localhost:3000/api/v1/accountable/register', formData);
+      const response = await axios.post(`${url}/api/v1/accountable/register`, formData);
       
       console.log('Resposta da API:', response.data);
       
@@ -206,7 +211,7 @@ const Responsible = () => {
     if (!deleteDialog.accountable?._id) return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/v1/accountable/${deleteDialog.accountable._id}`);
+      await axios.delete(`${url}/api/v1/accountable/${deleteDialog.accountable._id}`);
       setSuccess('Responsável excluído com sucesso!');
       fetchAccountables();
     } catch (err) {

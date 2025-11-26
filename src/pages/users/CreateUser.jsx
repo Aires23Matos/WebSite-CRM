@@ -42,6 +42,11 @@ import {
   VpnKey as KeyIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const CreateUser = () => {
   const navigate = useNavigate();
@@ -151,7 +156,7 @@ const CreateUser = () => {
       // Remove confirmPassword before sending
       const {...userData } = formData;
       
-      await axios.post('http://localhost:3000/api/v1/auth/register', userData);
+      await axios.post(`${url}/api/v1/auth/register`, userData);
       setSuccess('Usuário criado com sucesso!');
       
       setTimeout(() => {
