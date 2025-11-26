@@ -12,5 +12,10 @@ export default defineConfig({
     "/api": {
       target: "http://localhost:3000"
     }
-  }
+  },
+   build: {
+    outDir: 'dist',
+    sourcemap: true, 
+    minify: 'esbuild', 
+  },
 })
