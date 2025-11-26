@@ -1,6 +1,9 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { urlApi } from "../../public/url/url";
+//const url = 'http://localhost:3000';
+const url = urlApi;
 
 const RegisterPage = ({ setUser }) => {
   const [formData, setFormData] = useState({
@@ -38,7 +41,7 @@ const RegisterPage = ({ setUser }) => {
     }
 
     try {
-      const res = await axios.post("http://localhost:3000/api/v1/auth/register", formData);
+      const res = await axios.post(`${url}/api/v1/auth/register`, formData);
       localStorage.setItem("token", res.data.accessToken);
       setUser(res.data.user);
       navigate("/");

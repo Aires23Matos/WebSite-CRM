@@ -53,6 +53,11 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import CreateClient from '../clients/CreateClient';
+import { urlApi } from '../../../public/url/url';
+
+// const url = 'http://localhost:300'
+
+const url = urlApi;
 
 const Contacts = () => {
   const navigate = useNavigate();
@@ -85,7 +90,7 @@ const Contacts = () => {
     }
     
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/contact/contacts');
+      const response = await axios.get(`${url}/api/v1/contact/contacts`);
       console.log('Resposta completa da API:', response.data);
       
       const contactsData = response.data.data?.contacts || response.data.data || [];
@@ -133,7 +138,7 @@ const Contacts = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/contact/register', formData);
+      const response = await axios.post(`${url}/api/v1/contact/register`, formData);
       setSuccess(response.data.message || 'Contacto criado com sucesso!');
       
       // Limpar formulário e recarregar lista
@@ -170,7 +175,7 @@ const Contacts = () => {
 
     try {
       const contactId = deleteDialog.contact.id;
-      await axios.delete(`http://localhost:3000/api/v1/contact/contacts/${contactId}`);
+      await axios.delete(`${url}/api/v1/contact/contacts/${contactId}`);
       setSuccess('Contacto excluído com sucesso!');
       fetchContacts();
     } catch (err) {

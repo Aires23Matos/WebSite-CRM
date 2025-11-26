@@ -35,6 +35,9 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import CreateClient from '../clients/CreateClient';
+import { urlApi } from '../../../public/url/url';
+//const url = 'http://localhost:3000';
+const url = urlApi;
 
 const EditAddress = () => {
   const navigate = useNavigate();
@@ -64,7 +67,7 @@ const EditAddress = () => {
     const fetchAddress = async () => {
       try {
         console.log('Buscando endereço com ID:', address_id);
-        const response = await axios.get(`http://localhost:3000/api/v1/address/${address_id}`);
+        const response = await axios.get(`${url}/api/v1/address/${address_id}`);
         console.log('Resposta da API:', response.data);
         
         const address = response.data.data;
@@ -124,7 +127,7 @@ const EditAddress = () => {
 
     try {
       console.log('Atualizando endereço ID:', address_id);
-      const response = await axios.put(`http://localhost:3000/api/v1/address/${address_id}`, formData);
+      const response = await axios.put(`${url}/api/v1/address/${address_id}`, formData);
       setSuccess(response.data.message || 'Endereço atualizado com sucesso!');
       
       // Redirecionar após sucesso

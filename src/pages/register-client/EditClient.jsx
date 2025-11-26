@@ -20,6 +20,10 @@ import {
   Save as SaveIcon,
   PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000' 
+const url = urlApi;
 
 const EditClient = () => {
   const navigate = useNavigate();
@@ -43,7 +47,7 @@ const EditClient = () => {
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/v1/client/getById/${client_id}`);
+        const response = await axios.get(`${url}/api/v1/client/getById/${client_id}`);
         const client = response.data.data;
         
         setFormData({
@@ -128,7 +132,7 @@ const EditClient = () => {
         nif: formData.nif
       };
 
-      const response = await axios.put(`http://localhost:3000/api/v1/client/update/${client_id}`, payload);
+      const response = await axios.put(`${url}/api/v1/client/update/${client_id}`, payload);
       
       setSuccess(response.data.message || 'Cliente atualizado com sucesso!');
       

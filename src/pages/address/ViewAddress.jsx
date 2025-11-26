@@ -19,6 +19,9 @@ import {
   Delete as DeleteIcon,
   LocationOn as LocationIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+//const url = 'http://localhost:3000'
+const url = urlApi;
 
 const ViewAddress = () => {
   const { address_id } = useParams();
@@ -34,7 +37,7 @@ const ViewAddress = () => {
   const fetchAddress = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3000/api/v1/address/${address_id}`);
+      const response = await axios.get(`${url}/api/v1/address/${address_id}`);
       setAddress(response.data.data);
     } catch (err) {
       setError('Erro ao carregar dados do endereço');

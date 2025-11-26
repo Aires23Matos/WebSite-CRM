@@ -58,6 +58,10 @@ import {
   LocationOn as LocationIcon
 } from '@mui/icons-material';
 import ClientSelect from "../../components/clientSelect/ClientSelect"
+import { urlApi } from '../../../public/url/url';
+
+// const url = 'http://localhost:3000';
+const url = urlApi;
 
 const License = () => {
   const navigate = useNavigate();
@@ -100,7 +104,7 @@ const License = () => {
     }
     
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/licenses/licenses');
+      const response = await axios.get(`${url}/api/v1/licenses/licenses`);
       const licensesData = response.data.data?.licenses || response.data.data || [];
       
       // Verificar e atualizar estado das licenças expiradas
@@ -141,13 +145,13 @@ const License = () => {
 
     setLoadingAddresses(true);
     try {
-      const response = await axios.get(`http://localhost:3000/api/v1/address/${clientId}`);
+      const response = await axios.get(`${url}/api/v1/address/${clientId}`);
       const addresses = response.data.data?.addresses || [];
       setClientAddresses(addresses);
     } catch (err) {
       console.error('Erro ao carregar endereços do cliente:', err);
       try {
-        const alternativeResponse = await axios.get('http://localhost:3000/api/v1/address/addresses');
+        const alternativeResponse = await axios.get(`${url}/api/v1/address/addresses`);
         const allAddresses = alternativeResponse.data.data?.addresses || [];
         const filteredAddresses = allAddresses.filter(address => address.client_id === clientId);
         setClientAddresses(filteredAddresses);
@@ -239,7 +243,7 @@ const License = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/licenses/register', finalFormData);
+      const response = await axios.post(`${url}/api/v1/licenses/register`, finalFormData);
       setSuccess(response.data.message || 'Licença criada com sucesso!');
       
       // Limpar formulário e recarregar lista
@@ -284,7 +288,7 @@ const License = () => {
 
     try {
       const licenseId = deleteDialog.license._id || deleteDialog.license.license_id;
-      await axios.delete(`http://localhost:3000/api/v1/licenses/${licenseId}`);
+      await axios.delete(`${url}/api/v1/licenses/${licenseId}`);
       setSuccess('Licença excluída com sucesso!');
       fetchLicenses(true);
     } catch (err) {

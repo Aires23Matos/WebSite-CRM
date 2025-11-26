@@ -26,6 +26,11 @@ import {
   TrendingUp as TrendingUpIcon
 } from "@mui/icons-material";
 import CreateClient from "../clients/CreateClient";
+import { urlApi } from "../../../public/url/url";
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const EditLicense = () => {
   const navigate = useNavigate();
@@ -83,7 +88,7 @@ const EditLicense = () => {
     
     setClientLoading(true);
     try {
-      const response = await axios.get(`http://localhost:3000/api/v1/client/clients/${clientId}`);
+      const response = await axios.get(`${url}/api/v1/client/clients/${clientId}`);
       return response.data.data;
     } catch (err) {
       console.error('Erro ao carregar dados do cliente:', err);
@@ -103,14 +108,14 @@ const EditLicense = () => {
     setLoadingAddresses(true);
     try {
       // Buscar endereços pela rota de endereços filtrando por client_id
-      const response = await axios.get(`http://localhost:3000/api/v1/address/addresses?client_id=${clientId}`);
+      const response = await axios.get(`${url}/api/v1/address/addresses?client_id=${clientId}`);
       const addresses = response.data.data?.addresses || [];
       setClientAddresses(addresses);
     } catch (err) {
       console.error('Erro ao carregar endereços do cliente:', err);
       // Se der erro, tentar buscar de forma alternativa
       try {
-        const alternativeResponse = await axios.get('http://localhost:3000/api/v1/address/addresses');
+        const alternativeResponse = await axios.get(`${url}/api/v1/address/addresses`);
         const allAddresses = alternativeResponse.data.data?.addresses || [];
         const filteredAddresses = allAddresses.filter(address => address.client_id === clientId);
         setClientAddresses(filteredAddresses);
@@ -128,7 +133,7 @@ const EditLicense = () => {
     const fetchLicense = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/v1/licenses/${license_id}`
+          `${url}/api/v1/licenses/${license_id}`
         );
         
         const license = response.data.data;
@@ -223,12 +228,16 @@ const EditLicense = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Se a conta for "Parcial", garantir que valor_total seja maior que valor_pago
-    if (name === 'conta_pago' && value === 'Parcial') {
+    // Quando muda de "Pago" para "Parcial" - DEFINIR VALOR_TOTAL AUTOMATICAMENTE
+    if (name === 'conta_pago' && value === 'Parcial' && formData.conta_pago === 'Pago') {
+      // Se estava como "Pago" e muda para "Parcial", usar o valor_pago atual como base para valor_total
+      const novoValorTotal = formData.valor_total > formData.valor_pago ? formData.valor_total : formData.valor_pago + 1000;
+      
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        valor_total: prev.valor_total > prev.valor_pago ? prev.valor_total : prev.valor_pago + 1000
+        valor_total: novoValorTotal,
+        valor_pago: prev.valor_pago // Manter o valor pago atual
       }));
       return;
     }
@@ -239,6 +248,16 @@ const EditLicense = () => {
         ...prev,
         [name]: value,
         valor_pago: prev.valor_total // Copia o valor total para o valor pago
+      }));
+      return;
+    }
+
+    // Se a conta for "Parcial", garantir que valor_total seja maior que valor_pago
+    if (name === 'conta_pago' && value === 'Parcial') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        valor_total: prev.valor_total > prev.valor_pago ? prev.valor_total : prev.valor_pago + 1000
       }));
       return;
     }
@@ -270,6 +289,10 @@ const EditLicense = () => {
       }
       if (formData.valor_total <= 0) {
         setError('O valor total deve ser maior que zero para pagamento parcial');
+        return false;
+      }
+      if (formData.valor_pago >= formData.valor_total) {
+        setError('Para pagamento parcial, o valor pago deve ser menor que o valor total');
         return false;
       }
     }
@@ -331,6 +354,14 @@ const EditLicense = () => {
       // Pega apenas os campos que foram modificados
       const changedData = getChangedFields();
       
+      // SE ESTÁ MUDANDO DE "PAGO" PARA "PARCIAL", GARANTIR QUE VALOR_TOTAL ESTÁ INCLUÍDO
+      if (formData.conta_pago === 'Parcial' && originalData.conta_pago === 'Pago') {
+        // Se não foi modificado manualmente, incluir o valor_total atual
+        if (!changedData.valor_total) {
+          changedData.valor_total = formData.valor_total;
+        }
+      }
+
       // Se não há campos modificados, não faz nada
       if (Object.keys(changedData).length === 0) {
         setError("Nenhuma alteração foi feita");
@@ -366,7 +397,7 @@ const EditLicense = () => {
       console.log("Dados normalizados para envio:", dataToSend);
       
       const response = await axios.put(
-        `http://localhost:3000/api/v1/licenses/update/${license_id}`,
+        `${url}/api/v1/licenses/update/${license_id}`,
         dataToSend
       );
       
@@ -382,7 +413,9 @@ const EditLicense = () => {
       // Tratamento específico para erro de validação
       const errorData = err.response?.data;
       
-      if (errorData?.code === 'InvalidField') {
+      if (errorData?.code === 'MissingRequiredField') {
+        setError(`Erro: ${errorData.message}. É necessário definir um valor total para pagamento parcial.`);
+      } else if (errorData?.code === 'InvalidField') {
         setError(`Erro de validação: ${errorData.message}`);
       } else if (errorData?.code === 'DuplicateLicense') {
         setError(`Erro: ${errorData.message}`);
@@ -466,6 +499,14 @@ const EditLicense = () => {
           {isLicenseActive(formData.data_da_expiracao) && formData.estado === "ativa" && isFieldModified('data_da_expiracao') && (
             <Alert severity="success" sx={{ mb: 3 }}>
               A licença agora está ativa! O estado foi automaticamente atualizado.
+            </Alert>
+          )}
+
+          {/* Alerta informativo quando muda de Pago para Parcial */}
+          {formData.conta_pago === 'Parcial' && originalData.conta_pago === 'Pago' && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Ao mudar de "Pago" para "Parcial", é necessário definir um Valor Total. 
+              O sistema definiu automaticamente um valor sugerido, mas você pode ajustá-lo conforme necessário.
             </Alert>
           )}
 
@@ -760,7 +801,7 @@ const EditLicense = () => {
               </Grid>
 
               {/* Campo para Valor Total - aparece apenas quando conta_pago é "Parcial" */}
-              {formData.conta_pago === 'Parcial' && (
+              {(formData.conta_pago === 'Parcial' || (formData.conta_pago === 'Parcial' && originalData.conta_pago === 'Pago')) && (
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -778,7 +819,10 @@ const EditLicense = () => {
                           <TrendingUpIcon color="action" />
                         </InputAdornment>
                       ),
-                      inputProps: { min: formData.valor_pago || 0, step: 0.01 }
+                      inputProps: { 
+                        min: (formData.valor_pago || 0) + 1, // Garante que seja maior que valor_pago
+                        step: 0.01 
+                      }
                     }}
                   />
                   {isFieldModified('valor_total') && (
@@ -786,6 +830,9 @@ const EditLicense = () => {
                       ✓ Campo modificado
                     </Typography>
                   )}
+                  <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 0.5 }}>
+                    Para pagamento parcial, o valor total deve ser maior que o valor pago.
+                  </Typography>
                 </Grid>
               )}
 

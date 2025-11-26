@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Card,
   CardContent,
@@ -33,8 +33,8 @@ import {
   Fade,
   LinearProgress,
   Skeleton,
-  InputAdornment
-} from '@mui/material';
+  InputAdornment,
+} from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
@@ -47,44 +47,50 @@ import {
   Map as MapIcon,
   Place as PlaceIcon,
   Info as InfoIcon,
-  Numbers as NumbersIcon
-} from '@mui/icons-material';
-import CreateClient from '../clients/CreateClient';
+  Numbers as NumbersIcon,
+} from "@mui/icons-material";
+import CreateClient from "../clients/CreateClient";
+import { urlApi } from "../../../public/url/url";
+
+// const url = 'http://localhost:3000';
+const url = urlApi;
 
 const Address = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [addresses, setAddresses] = useState([]);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, address: null });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    address: null,
+  });
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
-    client_id: '',
-    provincia: '',
-    municipio: '',
-    bairro: '',
-    rua_ou_avenida: '',
-    numero_da_casa: '',
-    ponto_de_referencia: ''
+    client_id: "",
+    provincia: "",
+    municipio: "",
+    bairro: "",
+    rua_ou_avenida: "",
+    numero_da_casa: "",
+    ponto_de_referencia: "",
   });
 
   // Carregar lista de endereços
   const fetchAddresses = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/address/addresses');
+      const response = await axios.get(`${url}/api/v1/address/addresses`);
       setAddresses(response.data.data?.addresses || response.data.data || []);
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Erro ao carregar endereços:', err);
-      setError('Erro ao carregar lista de endereços');
+      console.error("Erro ao carregar endereços:", err);
+      setError("Erro ao carregar lista de endereços");
     } finally {
       setLoading(false);
     }
@@ -96,44 +102,47 @@ const Address = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleClientChange = (client) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      client_id: client ? client.client_id : ''
+      client_id: client ? client.client_id : "",
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/address/register', formData);
-      setSuccess(response.data.message || 'Endereço criado com sucesso!');
-      
+      const response = await axios.post(
+        `${url}/api/v1/address/register`,
+        formData
+      );
+      setSuccess(response.data.message || "Endereço criado com sucesso!");
+
       // Limpar formulário e recarregar lista
       setFormData({
-        client_id: '',
-        provincia: '',
-        municipio: '',
-        bairro: '',
-        rua_ou_avenida: '',
-        numero_da_casa: '',
-        ponto_de_referencia: ''
+        client_id: "",
+        provincia: "",
+        municipio: "",
+        bairro: "",
+        rua_ou_avenida: "",
+        numero_da_casa: "",
+        ponto_de_referencia: "",
       });
-      
+
       fetchAddresses();
     } catch (err) {
-      console.error('Erro ao criar endereço:', err);
-      setError(err.response?.data?.message || 'Erro ao criar endereço');
+      console.error("Erro ao criar endereço:", err);
+      setError(err.response?.data?.message || "Erro ao criar endereço");
     } finally {
       setSaving(false);
     }
@@ -144,7 +153,7 @@ const Address = () => {
     if (addressId) {
       navigate(`/edit-address/${addressId}`);
     } else {
-      setError('Erro: ID do endereço não encontrado');
+      setError("Erro: ID do endereço não encontrado");
     }
   };
 
@@ -157,12 +166,12 @@ const Address = () => {
 
     try {
       const addressId = deleteDialog.address._id;
-      await axios.delete(`http://localhost:3000/api/v1/address/${addressId}`);
-      setSuccess('Endereço excluído com sucesso!');
+      await axios.delete(`${url}/api/v1/address/${addressId}`);
+      setSuccess("Endereço excluído com sucesso!");
       fetchAddresses();
     } catch (err) {
-      console.error('Erro ao excluir endereço:', err);
-      setError(err.response?.data?.message || 'Erro ao excluir endereço');
+      console.error("Erro ao excluir endereço:", err);
+      setError(err.response?.data?.message || "Erro ao excluir endereço");
     } finally {
       setDeleteDialog({ open: false, address: null });
     }
@@ -173,12 +182,15 @@ const Address = () => {
   };
 
   // Filtrar endereços baseado na pesquisa
-  const filteredAddresses = addresses.filter(address =>
-    address.cliente?.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    address.provincia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    address.municipio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    address.bairro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    address.rua_ou_avenida?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAddresses = addresses.filter(
+    (address) =>
+      address.cliente?.clientName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      address.provincia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      address.municipio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      address.bairro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      address.rua_ou_avenida?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Função para formatar endereço completo
@@ -188,16 +200,18 @@ const Address = () => {
       address.numero_da_casa && `Nº ${address.numero_da_casa}`,
       address.bairro,
       address.municipio,
-      address.provincia
+      address.provincia,
     ].filter(Boolean);
-    
-    return parts.join(', ');
+
+    return parts.join(", ");
   };
 
   // Função para truncar texto longo
   const truncateText = (text, maxLength = 25) => {
-    if (!text) return 'N/A';
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    if (!text) return "N/A";
+    return text.length > maxLength
+      ? `${text.substring(0, maxLength)}...`
+      : text;
   };
 
   // Loading skeleton
@@ -211,49 +225,49 @@ const Address = () => {
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Box 
-        display="flex" 
-        flexDirection={{ xs: 'column', sm: 'row' }} 
-        justifyContent="space-between" 
-        alignItems={{ xs: 'flex-start', sm: 'center' }} 
-        gap={2} 
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        gap={2}
         mb={4}
       >
         <Box display="flex" alignItems="center" gap={2}>
           <Tooltip title="Voltar para clientes">
             <IconButton
-              onClick={() => navigate('/clients')}
+              onClick={() => navigate("/clients")}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.grey[100]}, ${theme.palette.grey[200]})`,
-                '&:hover': {
+                "&:hover": {
                   background: `linear-gradient(135deg, ${theme.palette.grey[200]}, ${theme.palette.grey[300]})`,
-                }
+                },
               }}
             >
               <ArrowBackIcon />
             </IconButton>
           </Tooltip>
           <Box>
-            <Typography 
-              variant="h3" 
-              component="h1" 
+            <Typography
+              variant="h3"
+              component="h1"
               fontWeight="bold"
-              sx={{ 
-                fontSize: { xs: '1.75rem', sm: '2.25rem', lg: '2.75rem' },
+              sx={{
+                fontSize: { xs: "1.75rem", sm: "2.25rem", lg: "2.75rem" },
                 background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent'
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                color: "transparent",
               }}
             >
               Gestão de Endereços
             </Typography>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               color="text.secondary"
-              sx={{ 
-                fontSize: { xs: '0.9rem', sm: '1.1rem' },
-                fontWeight: 400
+              sx={{
+                fontSize: { xs: "0.9rem", sm: "1.1rem" },
+                fontWeight: 400,
               }}
             >
               Cadastre e gerencie endereços dos clientes
@@ -266,9 +280,11 @@ const Address = () => {
         {/* Formulário */}
         <Grid item xs={12} lg={6}>
           <Card
-            sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+            sx={{
+              background: `linear-gradient(135deg, ${
+                theme.palette.background.paper
+              } 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
             }}
           >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -279,10 +295,10 @@ const Address = () => {
                     height: 48,
                     borderRadius: 3,
                     background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white'
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
                   }}
                 >
                   <LocationIcon />
@@ -430,15 +446,20 @@ const Address = () => {
                   </Grid>
 
                   <Grid item xs={12}>
-                    <Box display="flex" gap={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                    <Box
+                      display="flex"
+                      gap={2}
+                      justifyContent="flex-end"
+                      sx={{ mt: 2 }}
+                    >
                       <Button
                         type="button"
                         variant="outlined"
-                        onClick={() => navigate('/clients')}
+                        onClick={() => navigate("/clients")}
                         disabled={saving}
-                        sx={{ 
+                        sx={{
                           fontWeight: 600,
-                          minWidth: 120
+                          minWidth: 120,
                         }}
                       >
                         Cancelar
@@ -446,18 +467,20 @@ const Address = () => {
                       <Button
                         type="submit"
                         variant="contained"
-                        startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                        startIcon={
+                          saving ? <CircularProgress size={20} /> : <SaveIcon />
+                        }
                         disabled={saving || !formData.client_id}
-                        sx={{ 
+                        sx={{
                           fontWeight: 600,
                           minWidth: 180,
                           background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                          '&:hover': {
+                          "&:hover": {
                             background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-                          }
+                          },
                         }}
                       >
-                        {saving ? 'Registrando...' : 'Registrar Endereço'}
+                        {saving ? "Registrando..." : "Registrar Endereço"}
                       </Button>
                     </Box>
                   </Grid>
@@ -468,10 +491,12 @@ const Address = () => {
 
           {/* Informações Adicionais */}
           <Card
-            sx={{ 
+            sx={{
               mt: 3,
-              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.info.main, 0.02)} 100%)`,
-              border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`
+              background: `linear-gradient(135deg, ${
+                theme.palette.background.paper
+              } 0%, ${alpha(theme.palette.info.main, 0.02)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
             }}
           >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -481,7 +506,7 @@ const Address = () => {
                   Informações Importantes
                 </Typography>
               </Box>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -491,10 +516,11 @@ const Address = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    Província e município são obrigatórios para identificação geográfica.
+                    Província e município são obrigatórios para identificação
+                    geográfica.
                   </Typography>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <PlaceIcon color="primary" fontSize="small" />
@@ -506,7 +532,7 @@ const Address = () => {
                     Bairro e rua são essenciais para localização precisa.
                   </Typography>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <HomeIcon color="primary" fontSize="small" />
@@ -518,7 +544,7 @@ const Address = () => {
                     Ponto de referência ajuda na localização exata.
                   </Typography>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <LocationIcon color="primary" fontSize="small" />
@@ -538,13 +564,22 @@ const Address = () => {
         {/* Tabela de Endereços */}
         <Grid item xs={12} lg={6}>
           <Card
-            sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
-              border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`
+            sx={{
+              background: `linear-gradient(135deg, ${
+                theme.palette.background.paper
+              } 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
             }}
           >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2} mb={3}>
+              <Box
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", sm: "center" }}
+                gap={2}
+                mb={3}
+              >
                 <Box display="flex" alignItems="center" gap={2}>
                   <Box
                     sx={{
@@ -552,10 +587,10 @@ const Address = () => {
                       height: 48,
                       borderRadius: 3,
                       background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white'
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
                     }}
                   >
                     <HomeIcon />
@@ -569,7 +604,7 @@ const Address = () => {
                     </Typography>
                   </Box>
                 </Box>
-                
+
                 <TextField
                   size="small"
                   placeholder="Pesquisar endereços..."
@@ -582,10 +617,10 @@ const Address = () => {
                       </InputAdornment>
                     ),
                   }}
-                  sx={{ 
-                    minWidth: { xs: '100%', sm: 250 },
+                  sx={{
+                    minWidth: { xs: "100%", sm: 250 },
                     background: theme.palette.background.default,
-                    borderRadius: 2
+                    borderRadius: 2,
                   }}
                 />
               </Box>
@@ -595,36 +630,42 @@ const Address = () => {
               {loading ? (
                 <LoadingSkeleton />
               ) : (
-                <TableContainer 
-                  component={Paper} 
+                <TableContainer
+                  component={Paper}
                   elevation={0}
-                  sx={{ 
-                    maxHeight: isMobile ? '50vh' : '60vh',
+                  sx={{
+                    maxHeight: isMobile ? "50vh" : "60vh",
                     border: `1px solid ${theme.palette.divider}`,
-                    '&::-webkit-scrollbar': {
+                    "&::-webkit-scrollbar": {
                       width: 8,
                     },
-                    '&::-webkit-scrollbar-track': {
+                    "&::-webkit-scrollbar-track": {
                       background: theme.palette.grey[100],
                     },
-                    '&::-webkit-scrollbar-thumb': {
+                    "&::-webkit-scrollbar-thumb": {
                       background: theme.palette.primary.main,
                       borderRadius: 4,
-                    }
+                    },
                   }}
                 >
                   <Table stickyHeader>
                     <TableHead>
-                      <TableRow 
-                        sx={{ 
-                          backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                          '& th': {
-                            fontWeight: 'bold',
+                      <TableRow
+                        sx={{
+                          backgroundColor: alpha(
+                            theme.palette.primary.main,
+                            0.05
+                          ),
+                          "& th": {
+                            fontWeight: "bold",
                             color: theme.palette.primary.dark,
-                            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                            fontSize: { xs: "0.75rem", sm: "0.8rem" },
                             py: 2,
-                            borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
-                          }
+                            borderBottom: `2px solid ${alpha(
+                              theme.palette.primary.main,
+                              0.2
+                            )}`,
+                          },
                         }}
                       >
                         <TableCell>Cliente</TableCell>
@@ -636,33 +677,50 @@ const Address = () => {
                     <TableBody>
                       {filteredAddresses.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={isMobile ? 3 : 4} align="center" sx={{ py: 6 }}>
-                            <Box sx={{ color: 'text.secondary', mb: 2 }}>
+                          <TableCell
+                            colSpan={isMobile ? 3 : 4}
+                            align="center"
+                            sx={{ py: 6 }}
+                          >
+                            <Box sx={{ color: "text.secondary", mb: 2 }}>
                               <LocationIcon sx={{ fontSize: 48 }} />
                             </Box>
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
-                              {searchTerm ? 'Nenhum endereço encontrado' : 'Nenhum endereço registrado'}
+                            <Typography
+                              variant="h6"
+                              color="text.secondary"
+                              gutterBottom
+                            >
+                              {searchTerm
+                                ? "Nenhum endereço encontrado"
+                                : "Nenhum endereço registrado"}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {searchTerm ? 'Tente ajustar os termos da pesquisa' : 'Comece registrando um novo endereço'}
+                              {searchTerm
+                                ? "Tente ajustar os termos da pesquisa"
+                                : "Comece registrando um novo endereço"}
                             </Typography>
                           </TableCell>
                         </TableRow>
                       ) : (
                         filteredAddresses.map((address) => (
-                          <TableRow 
+                          <TableRow
                             key={address._id}
-                            sx={{ 
-                              transition: 'all 0.2s ease-in-out',
-                              '&:hover': { 
-                                backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                                transform: 'translateX(4px)'
-                              }
+                            sx={{
+                              transition: "all 0.2s ease-in-out",
+                              "&:hover": {
+                                backgroundColor: alpha(
+                                  theme.palette.primary.main,
+                                  0.04
+                                ),
+                                transform: "translateX(4px)",
+                              },
                             }}
                           >
                             <TableCell>
                               <Typography variant="body2" fontWeight="600">
-                                {address.cliente?.clientName || address.client_id || 'N/A'}
+                                {address.cliente?.clientName ||
+                                  address.client_id ||
+                                  "N/A"}
                               </Typography>
                             </TableCell>
                             <TableCell>
@@ -670,7 +728,10 @@ const Address = () => {
                                 <Typography variant="body2" fontWeight="500">
                                   {truncateText(formatFullAddress(address), 40)}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {address.provincia} → {address.municipio}
                                 </Typography>
                               </Box>
@@ -679,17 +740,19 @@ const Address = () => {
                               <TableCell>
                                 <Typography variant="body2">
                                   {address.ponto_de_referencia ? (
-                                    <Chip 
-                                      label={truncateText(address.ponto_de_referencia)} 
-                                      color="primary" 
+                                    <Chip
+                                      label={truncateText(
+                                        address.ponto_de_referencia
+                                      )}
+                                      color="primary"
                                       size="small"
                                       variant="outlined"
                                       sx={{ fontWeight: 500 }}
                                     />
                                   ) : (
-                                    <Chip 
-                                      label="Sem referência" 
-                                      color="default" 
+                                    <Chip
+                                      label="Sem referência"
+                                      color="default"
                                       size="small"
                                       variant="outlined"
                                     />
@@ -698,18 +761,28 @@ const Address = () => {
                               </TableCell>
                             )}
                             <TableCell align="center">
-                              <Box display="flex" justifyContent="center" gap={0.5}>
+                              <Box
+                                display="flex"
+                                justifyContent="center"
+                                gap={0.5}
+                              >
                                 <Tooltip title="Editar endereço">
                                   <IconButton
                                     color="primary"
                                     onClick={() => handleEdit(address)}
                                     size="small"
-                                    sx={{ 
-                                      background: alpha(theme.palette.primary.main, 0.1),
-                                      '&:hover': { 
-                                        background: alpha(theme.palette.primary.main, 0.2),
-                                        transform: 'scale(1.1)'
-                                      }
+                                    sx={{
+                                      background: alpha(
+                                        theme.palette.primary.main,
+                                        0.1
+                                      ),
+                                      "&:hover": {
+                                        background: alpha(
+                                          theme.palette.primary.main,
+                                          0.2
+                                        ),
+                                        transform: "scale(1.1)",
+                                      },
                                     }}
                                   >
                                     <EditIcon fontSize="small" />
@@ -720,12 +793,18 @@ const Address = () => {
                                     color="error"
                                     onClick={() => handleDelete(address)}
                                     size="small"
-                                    sx={{ 
-                                      background: alpha(theme.palette.error.main, 0.1),
-                                      '&:hover': { 
-                                        background: alpha(theme.palette.error.main, 0.2),
-                                        transform: 'scale(1.1)'
-                                      }
+                                    sx={{
+                                      background: alpha(
+                                        theme.palette.error.main,
+                                        0.1
+                                      ),
+                                      "&:hover": {
+                                        background: alpha(
+                                          theme.palette.error.main,
+                                          0.2
+                                        ),
+                                        transform: "scale(1.1)",
+                                      },
                                     }}
                                   >
                                     <DeleteIcon fontSize="small" />
@@ -745,29 +824,38 @@ const Address = () => {
 
           {/* Estatísticas Rápidas */}
           <Card
-            sx={{ 
+            sx={{
               mt: 3,
-              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.success.main, 0.02)} 100%)`,
-              border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`
+              background: `linear-gradient(135deg, ${
+                theme.palette.background.paper
+              } 0%, ${alpha(theme.palette.success.main, 0.02)} 100%)`,
+              border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
             }}
           >
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Typography variant="h6" gutterBottom fontWeight="bold" display="flex" alignItems="center" gap={1}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                fontWeight="bold"
+                display="flex"
+                alignItems="center"
+                gap={1}
+              >
                 <MapIcon color="success" />
                 Estatísticas de Endereços
               </Typography>
-              
+
               <Grid container spacing={3}>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <Typography 
-                      variant="h4" 
+                    <Typography
+                      variant="h4"
                       fontWeight="bold"
                       sx={{
                         background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        color: 'transparent'
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        color: "transparent",
                       }}
                     >
                       {addresses.length}
@@ -779,17 +867,17 @@ const Address = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <Typography 
-                      variant="h4" 
+                    <Typography
+                      variant="h4"
                       fontWeight="bold"
                       sx={{
                         background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        color: 'transparent'
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        color: "transparent",
                       }}
                     >
-                      {new Set(addresses.map(a => a.provincia)).size}
+                      {new Set(addresses.map((a) => a.provincia)).size}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Províncias
@@ -798,17 +886,17 @@ const Address = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <Typography 
-                      variant="h4" 
+                    <Typography
+                      variant="h4"
                       fontWeight="bold"
                       sx={{
                         background: `linear-gradient(135deg, ${theme.palette.warning.main}, ${theme.palette.warning.dark})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        color: 'transparent'
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        color: "transparent",
                       }}
                     >
-                      {new Set(addresses.map(a => a.municipio)).size}
+                      {new Set(addresses.map((a) => a.municipio)).size}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Municípios
@@ -817,17 +905,17 @@ const Address = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box textAlign="center">
-                    <Typography 
-                      variant="h4" 
+                    <Typography
+                      variant="h4"
                       fontWeight="bold"
                       sx={{
                         background: `linear-gradient(135deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        color: 'transparent'
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        color: "transparent",
                       }}
                     >
-                      {new Set(addresses.map(a => a.client_id)).size}
+                      {new Set(addresses.map((a) => a.client_id)).size}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Clientes
@@ -841,17 +929,19 @@ const Address = () => {
       </Grid>
 
       {/* Dialog de Confirmação de Exclusão */}
-      <Dialog 
-        open={deleteDialog.open} 
+      <Dialog
+        open={deleteDialog.open}
         onClose={cancelDelete}
         PaperProps={{
           sx: {
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.error.main, 0.05)} 100%)`,
-            border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
-          }
+            background: `linear-gradient(135deg, ${
+              theme.palette.background.paper
+            } 0%, ${alpha(theme.palette.error.main, 0.05)} 100%)`,
+            border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+          },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
+        <DialogTitle sx={{ fontWeight: "bold" }}>
           <Box display="flex" alignItems="center" gap={1}>
             <DeleteIcon color="error" />
             Confirmar Exclusão
@@ -859,17 +949,30 @@ const Address = () => {
         </DialogTitle>
         <DialogContent>
           <Typography>
-            Tem certeza que deseja excluir o endereço de{' '}
-            <strong>{deleteDialog.address?.cliente?.clientName || deleteDialog.address?.client_id}</strong>?
+            Tem certeza que deseja excluir o endereço de{" "}
+            <strong>
+              {deleteDialog.address?.cliente?.clientName ||
+                deleteDialog.address?.client_id}
+            </strong>
+            ?
           </Typography>
           {deleteDialog.address && (
-            <Box sx={{ mt: 2, p: 2, backgroundColor: alpha(theme.palette.grey[100], 0.5), borderRadius: 1 }}>
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                borderRadius: 1,
+              }}
+            >
               <Typography variant="body2" fontWeight="500">
-                <strong>Endereço:</strong> {formatFullAddress(deleteDialog.address)}
+                <strong>Endereço:</strong>{" "}
+                {formatFullAddress(deleteDialog.address)}
               </Typography>
               {deleteDialog.address.ponto_de_referencia && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  <strong>Referência:</strong> {deleteDialog.address.ponto_de_referencia}
+                  <strong>Referência:</strong>{" "}
+                  {deleteDialog.address.ponto_de_referencia}
                 </Typography>
               )}
             </Box>
@@ -879,24 +982,24 @@ const Address = () => {
           </Alert>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
+          <Button
             onClick={cancelDelete}
             variant="outlined"
             sx={{ fontWeight: 600 }}
           >
             Cancelar
           </Button>
-          <Button 
-            onClick={confirmDelete} 
-            color="error" 
+          <Button
+            onClick={confirmDelete}
+            color="error"
             variant="contained"
             startIcon={<DeleteIcon />}
-            sx={{ 
+            sx={{
               fontWeight: 600,
               background: `linear-gradient(135deg, ${theme.palette.error.main}, ${theme.palette.error.dark})`,
-              '&:hover': {
+              "&:hover": {
                 background: `linear-gradient(135deg, ${theme.palette.error.dark}, ${theme.palette.error.main})`,
-              }
+              },
             }}
           >
             Excluir Endereço

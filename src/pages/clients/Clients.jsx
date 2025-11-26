@@ -50,6 +50,10 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
 } from "@mui/icons-material";
+import { urlApi } from "../../../public/url/url";
+//const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
@@ -80,9 +84,7 @@ const Clients = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:3000/api/v1/client/clients"
-      );
+      const response = await axios.get(`${url}/api/v1/client/clients`);
       const allClients = response.data.data.clients || [];
 
       // Filtrar clientes ativos (não bloqueados)
@@ -101,9 +103,7 @@ const Clients = () => {
   // Fetch blocked clients from API
   const fetchBlockedClients = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/api/v1/client/blocked"
-      );
+      const response = await axios.get(`${url}/api/v1/client/blocked`);
       setBlockedClients(response.data.data.clientes || []);
     } catch (err) {
       console.error("Erro ao carregar clientes bloqueados:", err);
@@ -166,13 +166,13 @@ const Clients = () => {
       const { client, action } = blockDialog;
 
       if (action === "block") {
-        await axios.post("http://localhost:3000/api/v1/client/block", {
+        await axios.post(`${url}/api/v1/client/block`, {
           clientId: client.client_id,
           motivo: blockReason,
         });
         showSnackbar("Cliente bloqueado com sucesso", "success");
       } else {
-        await axios.post("http://localhost:3000/api/v1/client/unblock", {
+        await axios.post(`${url}/api/v1/client/unblock`, {
           clientId: client.client_id,
         });
         showSnackbar("Cliente desbloqueado com sucesso", "success");

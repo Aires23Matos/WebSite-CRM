@@ -39,6 +39,11 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { urlApi } from "../../../public/url/url";
+
+// const url = 'http://localhost:3000';
+
+const url = urlApi;
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -77,13 +82,13 @@ const Dashboard = () => {
 
       // Fetch clients data
       const clientsResponse = await axios.get(
-        "http://localhost:3000/api/v1/client/clients"
+        `${url}/api/v1/client/clients`
       );
       const clients = clientsResponse.data.data.clients || [];
 
       // Fetch users data
       const usersResponse = await axios.get(
-        "http://localhost:3000/api/v1/users/"
+        `${url}/api/v1/users/`
       );
       const users = usersResponse.data.users || [];
 

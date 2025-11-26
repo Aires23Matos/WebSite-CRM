@@ -20,6 +20,10 @@ import {
   Delete as DeleteIcon,
   CardMembership as LicenseIcon
 } from '@mui/icons-material';
+import { urlApi } from '../../../public/url/url';
+
+//const url = 'http://localhost:3000'
+const url = urlApi; 
 
 const ViewLicense = () => {
   const { license_id } = useParams();
@@ -35,7 +39,7 @@ const ViewLicense = () => {
   const fetchLicense = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3000/api/v1/licenses/${license_id}`);
+      const response = await axios.get(`${url}/api/v1/licenses/${license_id}`);
       setLicense(response.data.data);
     } catch (err) {
       setError('Erro ao carregar dados da licença');
@@ -47,7 +51,7 @@ const ViewLicense = () => {
   const handleDelete = async () => {
     if (window.confirm('Tem certeza que deseja excluir esta licença?')) {
       try {
-        await axios.delete(`http://localhost:3000/api/v1/licenses/${license_id}`);
+        await axios.delete(`${url}/api/v1/licenses/${license_id}`);
         navigate('/clients');
       } catch (err) {
         setError('Erro ao excluir licença');

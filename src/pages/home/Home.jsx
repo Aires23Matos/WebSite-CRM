@@ -11,7 +11,6 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
-  alpha,
 } from "@mui/material";
 import {
   People as PeopleIcon,
@@ -29,7 +28,7 @@ const Home = ({ user, error }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+  
 
   const features = [
     {

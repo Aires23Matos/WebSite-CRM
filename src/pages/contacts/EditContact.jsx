@@ -22,6 +22,10 @@ import {
   ContactPhone as ContactIcon
 } from '@mui/icons-material';
 import CreateClient from '../clients/CreateClient';
+import { urlApi } from '../../../public/url/url';
+// const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const EditContact = () => {
   const navigate = useNavigate();
@@ -43,7 +47,7 @@ const EditContact = () => {
   useEffect(() => {
     const fetchContact = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/v1/contact/${contact_id}`);
+        const response = await axios.get(`${url}/api/v1/contact/${contact_id}`);
         const contact = response.data.data;
         
         console.log('Dados do contacto:', contact);
@@ -98,7 +102,7 @@ const EditContact = () => {
     setSuccess('');
 
     try {
-      const response = await axios.put(`http://localhost:3000/api/v1/contact/contacts/${contact_id}`, formData);
+      const response = await axios.put(`${url}/api/v1/contact/contacts/${contact_id}`, formData);
       setSuccess(response.data.message || 'Contacto atualizado com sucesso!');
       
       // Redirecionar após sucesso

@@ -53,6 +53,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { urlApi } from '../../../public/url/url';
+
+// const url = 'http://localhost:3000'
+const url = urlApi;
 
 const Notifications = () => {
   const theme = useTheme();
@@ -86,7 +90,7 @@ const Notifications = () => {
         setLoading(true);
       }
       
-      const response = await axios.get('http://localhost:3000/api/v1/licenses/licenses');
+      const response = await axios.get(`${url}/api/v1/licenses/licenses`);
       const licensesData = response.data.data.licenses || [];
       
       // Atualizar automaticamente o estado das licenças expiradas

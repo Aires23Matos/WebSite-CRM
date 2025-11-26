@@ -424,7 +424,7 @@ const Responsible = () => {
                       onChange={handleChange}
                       required
                       variant="outlined"
-                      placeholder="+244 900 000 000"
+                      placeholder="900 000 000"
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

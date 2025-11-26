@@ -1,7 +1,7 @@
 // pages/contacts/ViewContact.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Card,
   CardContent,
@@ -12,21 +12,26 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Divider
-} from '@mui/material';
+  Divider,
+} from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon
-} from '@mui/icons-material';
+  Phone as PhoneIcon,
+} from "@mui/icons-material";
+import { urlApi } from "../../../public/url/url";
+
+// const url = 'http://localhost:3000'
+
+const url = urlApi;
 
 const ViewContact = () => {
   const { contact_id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [contact, setContact] = useState(null);
 
   useEffect(() => {
@@ -36,29 +41,38 @@ const ViewContact = () => {
   const fetchContact = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3000/api/v1/contact/${contact_id}`);
+      const response = await axios.get(
+        `${url}/api/v1/contact/${contact_id}`
+      );
       setContact(response.data.data);
     } catch (err) {
-      setError('Erro ao carregar dados do contacto');
+      setError("Erro ao carregar dados do contacto");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja excluir este contacto?')) {
+    if (window.confirm("Tem certeza que deseja excluir este contacto?")) {
       try {
-        await axios.delete(`http://localhost:3000/api/v1/contact/contacts/${contact_id}`);
-        navigate('/clients');
+        await axios.delete(
+          `${url}/api/v1/contact/contacts/${contact_id}`
+        );
+        navigate("/clients");
       } catch (err) {
-        setError('Erro ao excluir contacto');
+        setError("Erro ao excluir contacto");
       }
     }
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -95,7 +109,7 @@ const ViewContact = () => {
             Detalhes do Contacto
           </Typography>
         </Box>
-        
+
         <Box display="flex" gap={1}>
           <Button
             variant="contained"
@@ -119,14 +133,18 @@ const ViewContact = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Informações do Contacto</Typography>
+              <Typography variant="h6" gutterBottom>
+                Informações do Contacto
+              </Typography>
               <Divider sx={{ mb: 3 }} />
-              
+
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Box display="flex" alignItems="center" gap={2} mb={1}>
                     <EmailIcon color="primary" />
-                    <Typography variant="body2" color="text.secondary">Email</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Email
+                    </Typography>
                   </Box>
                   <Typography variant="body1">{contact.email}</Typography>
                 </Grid>
@@ -134,21 +152,39 @@ const ViewContact = () => {
                 <Grid item xs={12}>
                   <Box display="flex" alignItems="center" gap={2} mb={1}>
                     <PhoneIcon color="primary" />
-                    <Typography variant="body2" color="text.secondary">Telefone</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Telefone
+                    </Typography>
                   </Box>
                   <Typography variant="body1">{contact.telefone}</Typography>
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Status</Typography>
-                  <Chip 
-                    label={contact.isPrincipal ? "Contacto Principal" : "Contacto Secundário"} 
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Status
+                  </Typography>
+                  <Chip
+                    label={
+                      contact.isPrincipal
+                        ? "Contacto Principal"
+                        : "Contacto Secundário"
+                    }
                     color={contact.isPrincipal ? "primary" : "default"}
                   />
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Cliente</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Cliente
+                  </Typography>
                   <Typography variant="body1">{contact.client_id}</Typography>
                 </Grid>
               </Grid>
