@@ -9,6 +9,11 @@ import {
   Chip,
 } from "@mui/material";
 import axios from "axios";
+import { urlApi } from "../../../public/url/url";
+
+//const url = 'http://localhost:3000'
+
+const url = urlApi
 
 const ClientSelect = ({
   value,
@@ -31,7 +36,7 @@ const ClientSelect = ({
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/v1/client/clients"
+        `${url}/api/v1/client/clients`
       );
       const allClients = response.data.data.clients || [];
 
