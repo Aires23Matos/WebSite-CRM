@@ -145,7 +145,7 @@ const Address = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/api/v1/address/register`,
+        `${url}/api/v1/address/register`,
         formData
       );
       setSuccess(response.data.message || "Endereço criado com sucesso!");
