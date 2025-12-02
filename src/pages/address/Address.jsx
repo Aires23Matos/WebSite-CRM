@@ -34,6 +34,10 @@ import {
   LinearProgress,
   Skeleton,
   InputAdornment,
+  MenuItem,
+  FormControl,
+  Select,
+  InputLabel,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -48,11 +52,12 @@ import {
   Place as PlaceIcon,
   Info as InfoIcon,
   Numbers as NumbersIcon,
+  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import CreateClient from "../clients/CreateClient";
 import { urlApi } from "../../../public/url/url";
+import { angolaProvincesAndMunicipalities, provinces } from "../../components/utils/angolaProvincesData";
 
-// const url = 'http://localhost:3000';
 const url = urlApi;
 
 const Address = () => {
@@ -80,6 +85,23 @@ const Address = () => {
     numero_da_casa: "",
     ponto_de_referencia: "",
   });
+
+  // Estado para armazenar municípios filtrados
+  const [filteredMunicipalities, setFilteredMunicipalities] = useState([]);
+
+  // Efeito para carregar municípios quando a província mudar
+  useEffect(() => {
+    if (formData.provincia && angolaProvincesAndMunicipalities[formData.provincia]) {
+      setFilteredMunicipalities(angolaProvincesAndMunicipalities[formData.provincia]);
+      // Limpar município quando a província mudar
+      if (!angolaProvincesAndMunicipalities[formData.provincia].includes(formData.municipio)) {
+        setFormData(prev => ({ ...prev, municipio: "" }));
+      }
+    } else {
+      setFilteredMunicipalities([]);
+      setFormData(prev => ({ ...prev, municipio: "" }));
+    }
+  }, [formData.provincia]);
 
   // Carregar lista de endereços
   const fetchAddresses = async () => {
@@ -123,12 +145,12 @@ const Address = () => {
 
     try {
       const response = await axios.post(
-        `${url}/api/v1/address/register`,
+        `http://localhost:3000/api/v1/address/register`,
         formData
       );
       setSuccess(response.data.message || "Endereço criado com sucesso!");
 
-      // Limpar formulário e recarregar lista
+      // Limpar formulário
       setFormData({
         client_id: "",
         provincia: "",
@@ -139,6 +161,7 @@ const Address = () => {
         ponto_de_referencia: "",
       });
 
+      // Recarregar lista de endereços
       fetchAddresses();
     } catch (err) {
       console.error("Erro ao criar endereço:", err);
@@ -342,36 +365,71 @@ const Address = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Província"
-                      name="provincia"
-                      value={formData.provincia}
-                      onChange={handleChange}
-                      required
-                      variant="outlined"
-                      placeholder="Ex: Luanda"
-                      InputProps={{
-                        startAdornment: (
+                    <FormControl fullWidth required>
+                      <InputLabel id="provincia-label">Província</InputLabel>
+                      <Select
+                        labelId="provincia-label"
+                        name="provincia"
+                        value={formData.provincia}
+                        onChange={handleChange}
+                        label="Província"
+                        startAdornment={
                           <InputAdornment position="start">
                             <MapIcon color="action" />
                           </InputAdornment>
-                        ),
-                      }}
-                    />
+                        }
+                        IconComponent={ExpandMoreIcon}
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                            },
+                          },
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>Selecione uma província</em>
+                        </MenuItem>
+                        {provinces.map((provincia) => (
+                          <MenuItem key={provincia} value={provincia}>
+                            {provincia}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Município"
-                      name="municipio"
-                      value={formData.municipio}
-                      onChange={handleChange}
-                      required
-                      variant="outlined"
-                      placeholder="Ex: Belas"
-                    />
+                    <FormControl fullWidth required disabled={!formData.provincia}>
+                      <InputLabel id="municipio-label">Município</InputLabel>
+                      <Select
+                        labelId="municipio-label"
+                        name="municipio"
+                        value={formData.municipio}
+                        onChange={handleChange}
+                        label="Município"
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                            },
+                          },
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>
+                            {formData.provincia 
+                              ? `Selecione um município de ${formData.provincia}`
+                              : "Selecione primeiro a província"}
+                          </em>
+                        </MenuItem>
+                        {filteredMunicipalities.map((municipio) => (
+                          <MenuItem key={municipio} value={municipio}>
+                            {municipio}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
@@ -488,7 +546,6 @@ const Address = () => {
               </form>
             </CardContent>
           </Card>
-
           {/* Informações Adicionais */}
           <Card
             sx={{
