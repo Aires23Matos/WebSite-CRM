@@ -82,6 +82,17 @@ export const angolaProvincesAndMunicipalities = {
     "Namacunde",
     "Ombadja"
   ],
+  Cuando: [
+    "Calai", 
+    "Cuangar", 
+    "Cuchi", 
+    "Cuito Cuanavale", 
+    "Dirico", 
+    "Mavinga", 
+    "Menongue", 
+    "Nancova", 
+    "Rivungo"
+  ],
   Huambo: [
     "Bailundo",
     "Cachiungo",
@@ -110,6 +121,15 @@ export const angolaProvincesAndMunicipalities = {
     "Matala",
     "Quilengues",
     "Quipungo"
+  ],
+  "Icolo e Bengo": [
+    "Cuanza", 
+    "Cabiri", 
+    "Caboledo", 
+    "Calumbo", 
+    "Catete", 
+    "Quissama", 
+    "Sequele"
   ],
   Luanda: [
     "Belas",
@@ -167,6 +187,20 @@ export const angolaProvincesAndMunicipalities = {
     "Luchazes",
     "Cameia",
     "Moxico"
+  ],
+  "Moxico-Leste":[
+    "Alto Cuito",
+    "Cangamba", 
+    "Cangumbe",
+    "Chiume", 
+    "Camanongue", 
+    "Léua", 
+    "Lucusse", 
+    "Luena", 
+    "Lutembo", 
+    "Lumbala Guimbo",
+    "Lutuai",
+    "Ninda"
   ],
   Namibe: [
     "Bibala",
